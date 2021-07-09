@@ -28,7 +28,8 @@ namespace MongoDownloader
                     cancellationTokenSource.Cancel();
                 };
                 var options = new Options();
-                var archiveExtractor = new ArchiveExtractor(options);
+                var binaryStripper = await BinaryStripper.CreateAsync();
+                var archiveExtractor = new ArchiveExtractor(options, binaryStripper);
                 var downloader = new MongoDbDownloader(archiveExtractor, options);
                 await downloader.RunAsync(toolsDirectory, cancellationTokenSource.Token);
                 return 0;
