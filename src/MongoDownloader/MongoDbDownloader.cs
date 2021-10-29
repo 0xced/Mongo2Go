@@ -23,7 +23,7 @@ namespace MongoDownloader
             _options = options ?? throw new ArgumentNullException(nameof(options));
         }
 
-        public async Task<IArchive> GetArchiveAsync(Product product, Platform platform, Architecture architecture, CancellationToken cancellationToken)
+        public async Task<IArchive> GetArchiveAsync(Product product, OSPlatform platform, Architecture architecture, CancellationToken cancellationToken)
         {
             var version = await GetVersionAsync(product, cancellationToken);
             return GetArchive(product, platform, architecture, version);
@@ -32,7 +32,7 @@ namespace MongoDownloader
         public async Task<IReadOnlyCollection<IArchive>> GetArchivesAsync(Product product, CancellationToken cancellationToken)
         {
             var version = await GetVersionAsync(product, cancellationToken);
-            return Enum.GetValues(typeof(Platform)).Cast<Platform>().SelectMany(platform => GetArchives(product, platform, version)).ToList();
+            return _options.PlatformIdentifiers.Keys.SelectMany(platform => GetArchives(product, platform, version)).ToList();
         }
 
         public async Task<ByteSize> ProcessArchiveAsync(IArchive archive, DirectoryInfo extractDirectory, IArchiveProgress progress, CancellationToken cancellationToken)
@@ -85,12 +85,12 @@ namespace MongoDownloader
             return release.Versions.Single(e => e.Number == bestMatch.OriginalVersion);
         }
 
-        private IEnumerable<IArchive> GetArchives(Product product, Platform platform, Version version)
+        private IEnumerable<IArchive> GetArchives(Product product, OSPlatform platform, Version version)
         {
             return _options.Architectures[platform].Select(architecture => GetArchive(product, platform, architecture, version));
         }
 
-        private IArchive GetArchive(Product product, Platform platform, Architecture architecture, Version version)
+        private IArchive GetArchive(Product product, OSPlatform platform, Architecture architecture, Version version)
         {
             Func<Download, string> platformName = product switch
             {

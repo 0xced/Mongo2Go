@@ -33,11 +33,11 @@ namespace MongoDownloader
         /// <summary>
         /// The architectures to download for a given platform.
         /// </summary>
-        public IReadOnlyDictionary<Platform, IReadOnlyCollection<Architecture>> Architectures { get; init; } = new Dictionary<Platform, IReadOnlyCollection<Architecture>>
+        public IReadOnlyDictionary<OSPlatform, IReadOnlyCollection<Architecture>> Architectures { get; init; } = new Dictionary<OSPlatform, IReadOnlyCollection<Architecture>>
         {
-            [Platform.Linux] = new[] { Architecture.Arm64, Architecture.X64 },
-            [Platform.macOS] = new[] { Architecture.X64 },
-            [Platform.Windows] = new[] { Architecture.X64 },
+            [OSPlatform.Linux] = new[] { Architecture.Arm64, Architecture.X64 },
+            [OSPlatform.OSX] = new[] { Architecture.X64 },
+            [OSPlatform.Windows] = new[] { Architecture.X64 },
         };
 
         /// <summary>
@@ -49,11 +49,11 @@ namespace MongoDownloader
         /// <summary>
         /// The regular expressions used to identify platform-specific archives to download.
         /// </summary>
-        public IReadOnlyDictionary<Platform, Regex> PlatformIdentifiers { get; init; } = new Dictionary<Platform, Regex>
+        public IReadOnlyDictionary<OSPlatform, Regex> PlatformIdentifiers { get; init; } = new Dictionary<OSPlatform, Regex>
         {
-            [Platform.Linux] = new(@"ubuntu2004", RegexOptions.IgnoreCase),
-            [Platform.macOS] = new(@"macOS", RegexOptions.IgnoreCase),
-            [Platform.Windows] = new(@"windows", RegexOptions.IgnoreCase),
+            [OSPlatform.Linux] = new(@"ubuntu2004", RegexOptions.IgnoreCase),
+            [OSPlatform.OSX] = new(@"macOS", RegexOptions.IgnoreCase),
+            [OSPlatform.Windows] = new(@"windows", RegexOptions.IgnoreCase),
         };
 
         /// <summary>
@@ -68,34 +68,34 @@ namespace MongoDownloader
         /// <summary>
         /// A dictionary describing how to match MongoDB binaries inside the zip archives.
         /// <para/>
-        /// The key is a tuple with the <see cref="Product"/>/<see cref="Platform"/> and the
+        /// The key is a tuple with the <see cref="Product"/>/<see cref="OSPlatform"/> and the
         /// value is a regular expressions to match against the zip file name entry.
         /// </summary>
-        public IReadOnlyDictionary<(Product, Platform), Regex> Binaries { get; init; } = new Dictionary<(Product, Platform), Regex>
+        public IReadOnlyDictionary<(Product, OSPlatform), Regex> Binaries { get; init; } = new Dictionary<(Product, OSPlatform), Regex>
         {
-            [(Product.CommunityServer, Platform.Linux)]   = new(@"bin/mongod"),
-            [(Product.CommunityServer, Platform.macOS)]   = new(@"bin/mongod"),
-            [(Product.CommunityServer, Platform.Windows)] = new(@"bin/mongod\.exe"),
-            [(Product.DatabaseTools,   Platform.Linux)]   = new(@"bin/(mongoexport|mongoimport)"),
-            [(Product.DatabaseTools,   Platform.macOS)]   = new(@"bin/(mongoexport|mongoimport)"),
-            [(Product.DatabaseTools,   Platform.Windows)] = new(@"bin/(mongoexport|mongoimport)\.exe"),
+            [(Product.CommunityServer, OSPlatform.Linux)]   = new(@"bin/mongod"),
+            [(Product.CommunityServer, OSPlatform.OSX)]     = new(@"bin/mongod"),
+            [(Product.CommunityServer, OSPlatform.Windows)] = new(@"bin/mongod\.exe"),
+            [(Product.DatabaseTools,   OSPlatform.Linux)]   = new(@"bin/(mongoexport|mongoimport)"),
+            [(Product.DatabaseTools,   OSPlatform.OSX)]     = new(@"bin/(mongoexport|mongoimport)"),
+            [(Product.DatabaseTools,   OSPlatform.Windows)] = new(@"bin/(mongoexport|mongoimport)\.exe"),
         };
 
         /// <summary>
         /// A dictionary describing how to match licence files inside the zip archives.
         /// <para/>
-        /// The key is a tuple with the <see cref="Product"/>/<see cref="Platform"/> and the
+        /// The key is a tuple with the <see cref="Product"/>/<see cref="OSPlatform"/> and the
         /// value is a regular expressions to match against the zip file name entry.
         /// </summary>
-        public IReadOnlyDictionary<(Product, Platform), Regex> Licenses { get; init; } = new Dictionary<(Product, Platform), Regex>
+        public IReadOnlyDictionary<(Product, OSPlatform), Regex> Licenses { get; init; } = new Dictionary<(Product, OSPlatform), Regex>
         {
             // The regular expression matches anything at the zip top level, i.e. does not contain any slash (/) character
-            [(Product.CommunityServer, Platform.Linux)]   = new(@"^[^/]+$"),
-            [(Product.CommunityServer, Platform.macOS)]   = new(@"^[^/]+$"),
-            [(Product.CommunityServer, Platform.Windows)] = new(@"^[^/]+$"),
-            [(Product.DatabaseTools,   Platform.Linux)]   = new(@"^[^/]+$"),
-            [(Product.DatabaseTools,   Platform.macOS)]   = new(@"^[^/]+$"),
-            [(Product.DatabaseTools,   Platform.Windows)] = new(@"^[^/]+$"),
+            [(Product.CommunityServer, OSPlatform.Linux)]   = new(@"^[^/]+$"),
+            [(Product.CommunityServer, OSPlatform.OSX)]     = new(@"^[^/]+$"),
+            [(Product.CommunityServer, OSPlatform.Windows)] = new(@"^[^/]+$"),
+            [(Product.DatabaseTools,   OSPlatform.Linux)]   = new(@"^[^/]+$"),
+            [(Product.DatabaseTools,   OSPlatform.OSX)]     = new(@"^[^/]+$"),
+            [(Product.DatabaseTools,   OSPlatform.Windows)] = new(@"^[^/]+$"),
         };
 
         /// <summary>

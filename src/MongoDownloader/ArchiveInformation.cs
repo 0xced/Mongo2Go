@@ -5,7 +5,7 @@ namespace MongoDownloader
 {
     internal class ArchiveInformation : IArchive
     {
-        public ArchiveInformation(Product product, Platform platform, Architecture architecture, Uri url, string version)
+        public ArchiveInformation(Product product, OSPlatform platform, Architecture architecture, Uri url, string version)
         {
             Product = product;
             Platform = platform;
@@ -15,11 +15,11 @@ namespace MongoDownloader
         }
 
         public Product Product { get; }
-        public Platform Platform { get; }
+        public OSPlatform Platform { get; }
         public Architecture Architecture { get; }
         public Uri Url { get; }
         public string Version { get; }
 
-        public override string ToString() => $"{Product} {Version} for {Platform}/{Architecture.ToString().ToLowerInvariant()}";
+        public override string ToString() => $"{Product} {Version} for {Platform.Pretty()}/{Architecture.ToString().ToLowerInvariant()}";
     }
 }

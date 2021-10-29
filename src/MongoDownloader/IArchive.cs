@@ -6,7 +6,7 @@ namespace MongoDownloader
     public interface IArchive
     {
         Product Product { get; }
-        Platform Platform { get; }
+        OSPlatform Platform { get; }
         Architecture Architecture { get; }
         Uri Url { get; }
         string Version { get; }
