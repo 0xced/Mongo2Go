@@ -5,22 +5,22 @@ using ByteSizeLib;
 using HttpProgress;
 using Spectre.Console;
 
-namespace MongoDownloader
+namespace MongoDownloader.CLI
 {
-    public class ArchiveProgress : IProgress<ICopyProgress>
+    public class ArchiveProgress : IArchiveProgress
     {
         private readonly ProgressTask _archiveProgress;
         private readonly ProgressTask _globalProgress;
         private readonly IEnumerable<ProgressTask> _allArchiveProgresses;
-        private readonly Download _download;
+        private readonly IArchive _archive;
         private readonly string _completedDescription;
 
-        public ArchiveProgress(ProgressTask archiveProgress, ProgressTask globalProgress, IEnumerable<ProgressTask> allArchiveProgresses, Download download, string completedDescription)
+        public ArchiveProgress(ProgressTask archiveProgress, ProgressTask globalProgress, IEnumerable<ProgressTask> allArchiveProgresses, IArchive archive, string completedDescription)
         {
             _archiveProgress = archiveProgress ?? throw new ArgumentNullException(nameof(archiveProgress));
             _globalProgress = globalProgress ?? throw new ArgumentNullException(nameof(globalProgress));
             _allArchiveProgresses = allArchiveProgresses ?? throw new ArgumentNullException(nameof(allArchiveProgresses));
-            _download = download ?? throw new ArgumentNullException(nameof(download));
+            _archive = archive ?? throw new ArgumentNullException(nameof(archive));
             _completedDescription = completedDescription ?? throw new ArgumentNullException(nameof(completedDescription));
         }
 
@@ -34,12 +34,12 @@ namespace MongoDownloader
             if (progress.BytesTransferred < progress.ExpectedBytes)
             {
                 var speed = ByteSize.FromBytes(progress.BytesTransferred / progress.TransferTime.TotalSeconds);
-                text = $"Downloading {_download} from {_download.Archive.Url} at {speed:0.0}/s";
+                text = $"Downloading {_archive} from {_archive.Url} at {speed:0.0}/s";
                 isIndeterminate = false;
             }
             else
             {
-                text = $"Downloaded {_download}";
+                text = $"Downloaded {_archive}";
                 isIndeterminate = true;
                 // Cheat by subtracting 1 so that the progress stays at 99% in indeterminate mode for
                 // remaining tasks (stripping) to complete with an indeterminate progress bar
@@ -54,9 +54,9 @@ namespace MongoDownloader
             }
         }
 
-        public void Report(string action)
+        public void Report(string description)
         {
-            Report(action, isIndeterminate: true);
+            Report(description, isIndeterminate: true);
         }
 
         public void ReportCompleted(ByteSize strippedSize)
@@ -73,7 +73,7 @@ namespace MongoDownloader
             }
 
             var saved = strippedSize.Bytes > 0 ? $" (saved {strippedSize:#.#} by stripping)" : "";
-            Report($"Extracted {_download}{saved}", isIndeterminate: false);
+            Report($"Extracted {_archive}{saved}", isIndeterminate: false);
         }
 
         private void Report(string description, bool isIndeterminate)

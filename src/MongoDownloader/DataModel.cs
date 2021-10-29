@@ -9,63 +9,49 @@ using System.Text.Json.Serialization;
 
 namespace MongoDownloader
 {
-    public enum Platform
-    {
-        Linux,
-        // ReSharper disable once InconsistentNaming
-        macOS,
-        Windows,
-    }
-
-    public enum Product
-    {
-        CommunityServer,
-        DatabaseTools,
-    }
-
     /// <summary>
     /// The root object of the JSON describing the available releases.
     /// </summary>
-    public class Release
+    internal class Release
     {
         [JsonPropertyName("versions")]
-        public List<Version> Versions { get; set; } = new();
+        public List<Version> Versions { get; init; } = new();
     }
 
-    public class Version
+    internal class Version : IVersion
     {
         [JsonPropertyName("version")]
-        public string Number { get; set; } = "";
+        public string Number { get; init; } = "";
 
         [JsonPropertyName("production_release")]
-        public bool Production { get; set; } = false;
+        public bool Production { get; init; } = false;
 
         [JsonPropertyName("downloads")]
-        public List<Download> Downloads { get; set; } = new();
+        public List<Download> Downloads { get; init; } = new();
     }
 
-    public class Download
+    internal class Download : IArchive
     {
         /// <summary>
         /// Used to identify the platform for the Community Server archives
         /// </summary>
         [JsonPropertyName("target")]
-        public string Target { get; set; } = "";
+        public string Target { get; init; } = "";
 
         /// <summary>
         /// Used to identify the platform for the Database Tools archives
         /// </summary>
         [JsonPropertyName("name")]
-        public string Name { get; set; } = "";
+        public string Name { get; init; } = "";
 
         [JsonPropertyName("arch")]
-        public string Arch { get; set; } = "";
+        public string Arch { get; init; } = "";
 
         [JsonPropertyName("edition")]
-        public string Edition { get; set; } = "";
+        public string Edition { get; init; } = "";
 
         [JsonPropertyName("archive")]
-        public Archive Archive { get; set; } = new();
+        public Archive Archive { get; init; } = new();
 
         public Product Product { get; set; }
 
@@ -73,12 +59,14 @@ namespace MongoDownloader
 
         public Architecture Architecture { get; set; }
 
+        public Uri Url => Archive.Url;
+
         public override string ToString() => $"{Product} for {Platform}/{Architecture.ToString().ToLowerInvariant()}";
     }
 
-    public class Archive
+    internal class Archive
     {
         [JsonPropertyName("url")]
-        public Uri Url { get; set; } = default!;
+        public Uri Url { get; init; } = default!;
     }
 }

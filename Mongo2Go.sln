@@ -15,6 +15,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		README.md = README.md
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MongoDownloader.CLI", "src\MongoDownloader.CLI\MongoDownloader.CLI.csproj", "{51D30D3A-BD0A-4535-B973-1F4B55078E40}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -33,6 +35,10 @@ Global
 		{7E10E0DE-8092-4ECB-B05A-0A15472AB8D2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7E10E0DE-8092-4ECB-B05A-0A15472AB8D2}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7E10E0DE-8092-4ECB-B05A-0A15472AB8D2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{51D30D3A-BD0A-4535-B973-1F4B55078E40}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{51D30D3A-BD0A-4535-B973-1F4B55078E40}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{51D30D3A-BD0A-4535-B973-1F4B55078E40}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{51D30D3A-BD0A-4535-B973-1F4B55078E40}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -41,6 +47,7 @@ Global
 		{040A1626-1D04-40D6-BCCF-2D207AE648FC} = {0B557702-3C09-4514-BDD5-55A44F22113F}
 		{ADE5A672-6A00-4561-BCC1-E5497016DE24} = {0B557702-3C09-4514-BDD5-55A44F22113F}
 		{7E10E0DE-8092-4ECB-B05A-0A15472AB8D2} = {0B557702-3C09-4514-BDD5-55A44F22113F}
+		{51D30D3A-BD0A-4535-B973-1F4B55078E40} = {0B557702-3C09-4514-BDD5-55A44F22113F}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {08364BFD-1801-4718-83F5-F6F99950B05E}

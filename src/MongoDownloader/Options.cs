@@ -7,7 +7,7 @@ using System.Text.RegularExpressions;
 
 namespace MongoDownloader
 {
-    internal class Options
+    public class Options
     {
         /// <summary>
         /// The <see cref="HttpClient"/> instance used to fetch data over HTTP.
