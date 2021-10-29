@@ -62,7 +62,7 @@ namespace MongoDownloader
                 progress.Report(new CopyProgress(TimeSpan.Zero, 0, 1, 1));
                 return destinationFile;
             }
-            await using var destinationStream = destinationFile.OpenWrite();
+            using var destinationStream = destinationFile.OpenWrite();
             await _options.HttpClient.GetAsync(archive.Url.AbsoluteUri, destinationStream, progress, cancellationToken);
             return destinationFile;
         }
@@ -71,7 +71,7 @@ namespace MongoDownloader
         {
             var release = await _options.HttpClient.GetFromJsonAsync<Release>(_options.CommunityServerUrl, cancellationToken) ?? throw new InvalidOperationException($"Failed to deserialize {nameof(Release)}");
             var version = release.Versions.FirstOrDefault(e => e.Production) ?? throw new InvalidOperationException("No Community Server production version was found");
-            var downloads = Enum.GetValues<Platform>().SelectMany(platform => GetArchives(platform, Product.CommunityServer, version, _options, _options.Edition));
+            var downloads = Enum.GetValues(typeof(Platform)).Cast<Platform>().SelectMany(platform => GetArchives(platform, Product.CommunityServer, version, _options, _options.Edition));
             return (version, downloads);
         }
 
@@ -79,7 +79,7 @@ namespace MongoDownloader
         {
             var release = await _options.HttpClient.GetFromJsonAsync<Release>(_options.DatabaseToolsUrl, cancellationToken) ?? throw new InvalidOperationException($"Failed to deserialize {nameof(Release)}");
             var version = release.Versions.FirstOrDefault() ?? throw new InvalidOperationException("No Database Tools version was found");
-            var downloads = Enum.GetValues<Platform>().SelectMany(platform => GetArchives(platform, Product.DatabaseTools, version, _options));
+            var downloads = Enum.GetValues(typeof(Platform)).Cast<Platform>().SelectMany(platform => GetArchives(platform, Product.DatabaseTools, version, _options));
             return (version, downloads);
         }
 

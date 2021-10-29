@@ -36,9 +36,9 @@ namespace MongoDownloader
             using var headResponse = await _options.HttpClient.SendAsync(new HttpRequestMessage(HttpMethod.Head, archiveUrl), cancellationToken);
             var contentLength = headResponse.Content.Headers.ContentLength ?? 0;
             var cacheFile = new FileInfo(Path.Combine(_options.CacheDirectory.FullName, archiveUrl.Segments.Last()));
-            await using var cacheStream = new FileStream(cacheFile.FullName, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
+            using var cacheStream = new FileStream(cacheFile.FullName, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
             var stopwatch = Stopwatch.StartNew();
-            await using var httpStream = new HttpStream(archiveUrl, cacheStream, ownStream: false, CachePageSize, cached: null);
+            using var httpStream = new HttpStream(archiveUrl, cacheStream, ownStream: false, CachePageSize, cached: null);
             httpStream.RangeDownloaded += (_, args) =>
             {
                 bytesTransferred += args.Length;
@@ -51,7 +51,7 @@ namespace MongoDownloader
             foreach (var entry in zipFile.Cast<ZipEntry>().Where(e => e.IsFile))
             {
                 var nameParts = entry.Name.Split('\\', '/').Skip(1).ToList();
-                var zipEntryPath = string.Join('/', nameParts);
+                var zipEntryPath = string.Join("/", nameParts);
                 var isBinaryFile = binaryRegex.IsMatch(zipEntryPath);
                 var isLicenseFile = licenseRegex.IsMatch(zipEntryPath);
                 if (isBinaryFile || isLicenseFile)
@@ -59,9 +59,9 @@ namespace MongoDownloader
                     var destinationPathParts = isLicenseFile ? nameParts.Prepend(ProductDirectoryName(archive.Product)) : nameParts;
                     var destinationFile = new FileInfo(Path.Combine(destinationPathParts.Prepend(extractDirectory.FullName).ToArray()));
                     destinationFile.Directory?.Create();
-                    await using var destinationStream = destinationFile.OpenWrite();
-                    await using var inputStream = zipFile.GetInputStream(entry);
-                    await inputStream.CopyToAsync(destinationStream, cancellationToken);
+                    using var destinationStream = destinationFile.OpenWrite();
+                    using var inputStream = zipFile.GetInputStream(entry);
+                    await inputStream.CopyToAsync(destinationStream);
                     if (isBinaryFile && _binaryStripper is not null)
                     {
                         stripTasks.Add(_binaryStripper.StripAsync(destinationFile, cancellationToken));
