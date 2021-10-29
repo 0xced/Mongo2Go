@@ -9,5 +9,6 @@ namespace MongoDownloader
         Platform Platform { get; }
         Architecture Architecture { get; }
         Uri Url { get; }
+        string Version { get; }
     }
 }

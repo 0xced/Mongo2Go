@@ -3,11 +3,12 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http.Json;
-using System.Text.RegularExpressions;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using ByteSizeLib;
 using HttpProgress;
+using NuGet.Versioning;
 
 namespace MongoDownloader
 {
@@ -22,14 +23,16 @@ namespace MongoDownloader
             _options = options ?? throw new ArgumentNullException(nameof(options));
         }
 
-        public async Task<(IVersion version, IEnumerable<IArchive> archives)> GetArchivesAsync(Product product, CancellationToken cancellationToken)
+        public async Task<IArchive> GetArchiveAsync(Product product, Platform platform, Architecture architecture, CancellationToken cancellationToken)
         {
-            return product switch
-            {
-                Product.CommunityServer => await GetCommunityServerArchivesAsync(cancellationToken),
-                Product.DatabaseTools => await GetDatabaseToolsArchivesAsync(cancellationToken),
-                _ => throw new ArgumentOutOfRangeException(nameof(product), product, $"The value of argument '{nameof(product)}' ({product}) is invalid for enum type '{nameof(Product)}'.")
-            };
+            var version = await GetVersionAsync(product, cancellationToken);
+            return GetArchive(product, platform, architecture, version);
+        }
+
+        public async Task<IReadOnlyCollection<IArchive>> GetArchivesAsync(Product product, CancellationToken cancellationToken)
+        {
+            var version = await GetVersionAsync(product, cancellationToken);
+            return Enum.GetValues(typeof(Platform)).Cast<Platform>().SelectMany(platform => GetArchives(product, platform, version)).ToList();
         }
 
         public async Task<ByteSize> ProcessArchiveAsync(IArchive archive, DirectoryInfo extractDirectory, IArchiveProgress progress, CancellationToken cancellationToken)
@@ -67,63 +70,61 @@ namespace MongoDownloader
             return destinationFile;
         }
 
-        public async Task<(IVersion version, IEnumerable<IArchive> archives)> GetCommunityServerArchivesAsync(CancellationToken cancellationToken)
+        private async Task<Version> GetVersionAsync(Product product, CancellationToken cancellationToken)
         {
-            var release = await _options.HttpClient.GetFromJsonAsync<Release>(_options.CommunityServerUrl, cancellationToken) ?? throw new InvalidOperationException($"Failed to deserialize {nameof(Release)}");
-            var version = release.Versions.FirstOrDefault(e => e.Production) ?? throw new InvalidOperationException("No Community Server production version was found");
-            var downloads = Enum.GetValues(typeof(Platform)).Cast<Platform>().SelectMany(platform => GetArchives(platform, Product.CommunityServer, version, _options, _options.Edition));
-            return (version, downloads);
-        }
-
-        public async Task<(IVersion version, IEnumerable<IArchive> archives)> GetDatabaseToolsArchivesAsync(CancellationToken cancellationToken)
-        {
-            var release = await _options.HttpClient.GetFromJsonAsync<Release>(_options.DatabaseToolsUrl, cancellationToken) ?? throw new InvalidOperationException($"Failed to deserialize {nameof(Release)}");
-            var version = release.Versions.FirstOrDefault() ?? throw new InvalidOperationException("No Database Tools version was found");
-            var downloads = Enum.GetValues(typeof(Platform)).Cast<Platform>().SelectMany(platform => GetArchives(platform, Product.DatabaseTools, version, _options));
-            return (version, downloads);
-        }
-
-        private static IEnumerable<Download> GetArchives(Platform platform, Product product, Version version, Options options, Regex? editionRegex = null)
-        {
-            var platformRegex = options.PlatformIdentifiers[platform];
-            Func<Download, bool> platformPredicate = product switch
+            var url = product switch
             {
-                Product.CommunityServer => download => platformRegex.IsMatch(download.Target),
-                Product.DatabaseTools => download => platformRegex.IsMatch(download.Name),
+                Product.CommunityServer => _options.CommunityServerUrl,
+                Product.DatabaseTools => _options.DatabaseToolsUrl,
+                _ => throw new ArgumentOutOfRangeException(nameof(product), product, $"The value of argument '{nameof(product)}' ({product}) is invalid for enum type '{nameof(Product)}'.")
+            };
+            var release = await _options.HttpClient.GetFromJsonAsync<Release>(url, cancellationToken) ?? throw new InvalidOperationException($"Failed to deserialize {nameof(Release)}");
+            var semanticVersions = release.Versions.Select(e => new NuGetVersion(e.Number));
+            var range = _options.VersionRanges[product];
+            var bestMatch = range.FindBestMatch(semanticVersions) ?? throw new InvalidOperationException($"No {product} matching {range} version was found.");
+            return release.Versions.Single(e => e.Number == bestMatch.OriginalVersion);
+        }
+
+        private IEnumerable<IArchive> GetArchives(Product product, Platform platform, Version version)
+        {
+            return _options.Architectures[platform].Select(architecture => GetArchive(product, platform, architecture, version));
+        }
+
+        private IArchive GetArchive(Product product, Platform platform, Architecture architecture, Version version)
+        {
+            Func<Download, string> platformName = product switch
+            {
+                Product.CommunityServer => download => download.Target,
+                Product.DatabaseTools => download => download.Name,
                 _ => throw new ArgumentOutOfRangeException(nameof(product), product, $"The value of argument '{nameof(product)}' ({product}) is invalid for enum type '{nameof(Product)}'.")
             };
 
-            foreach (var architecture in options.Architectures[platform])
+            var platformRegex = _options.PlatformIdentifiers[platform];
+            var editionRegex = product == Product.CommunityServer ? _options.Edition : null;
+
+            var architectureRegex = _options.ArchitectureIdentifiers[architecture];
+            var matchingDownloads = version.Downloads
+                .Where(e => platformRegex.IsMatch(platformName(e)))
+                .Where(e => architectureRegex.IsMatch(e.Arch))
+                .Where(e => editionRegex?.IsMatch(e.Edition) ?? true)
+                .ToList();
+
+            if (matchingDownloads.Count == 0)
             {
-                var architectureRegex = options.ArchitectureIdentifiers[architecture];
-                var matchingDownloads = version.Downloads
-                    .Where(platformPredicate)
-                    .Where(e => architectureRegex.IsMatch(e.Arch))
-                    .Where(e => editionRegex?.IsMatch(e.Edition) ?? true)
-                    .ToList();
-
-                if (matchingDownloads.Count == 0)
-                {
-                    var downloads = version.Downloads.OrderBy(e => e.Target).ThenBy(e => e.Arch);
-                    var messages = Enumerable.Empty<string>()
-                        .Append($"Download not found for {platform}/{architecture}.")
-                        .Append($"  Available downloads for {product} {version.Number}:")
-                        .Concat(downloads.Select(e => $"    - {e.Target}/{e.Arch} ({e.Edition})"));
-                    throw new InvalidOperationException(string.Join(Environment.NewLine, messages));
-                }
-
-                if (matchingDownloads.Count > 1)
-                {
-                    throw new InvalidOperationException($"Found {matchingDownloads.Count} downloads for {platform}/{architecture} but expected to find only one.");
-                }
-
-                var download = matchingDownloads[0];
-                download.Platform = platform;
-                download.Architecture = architecture;
-                download.Product = product;
-
-                yield return download;
+                var downloads = version.Downloads.OrderBy(e => e.Target).ThenBy(e => e.Arch);
+                var messages = Enumerable.Empty<string>()
+                    .Append($"Download not found for {product} {platform}/{architecture}.")
+                    .Append($"  Available downloads for version {version}:")
+                    .Concat(downloads.Select(e => $"    - {platformName(e)}/{e.Arch} ({e.Edition})"));
+                throw new InvalidOperationException(string.Join(Environment.NewLine, messages));
             }
+
+            if (matchingDownloads.Count > 1)
+            {
+                throw new InvalidOperationException($"Found {matchingDownloads.Count} downloads for {platform}/{architecture} but expected to find only one.");
+            }
+
+            return new ArchiveInformation(product, platform, architecture, matchingDownloads[0].Archive.Url, version.Number);
         }
     }
 }

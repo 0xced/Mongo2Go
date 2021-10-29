@@ -4,6 +4,7 @@ using System.IO;
 using System.Net.Http;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
+using NuGet.Versioning;
 
 namespace MongoDownloader
 {
@@ -95,6 +96,26 @@ namespace MongoDownloader
             [(Product.DatabaseTools,   Platform.Linux)]   = new(@"^[^/]+$"),
             [(Product.DatabaseTools,   Platform.macOS)]   = new(@"^[^/]+$"),
             [(Product.DatabaseTools,   Platform.Windows)] = new(@"^[^/]+$"),
+        };
+
+        /// <summary>
+        /// A dictionary describing the NuGet version range to match against all available versions.
+        /// The version to download is determined by applying <see cref="VersionRange.FindBestMatch"/> on all the available versions.
+        /// <para/>
+        /// By default, uses the latest stable version.
+        /// <para/>
+        /// See https://docs.microsoft.com/en-us/nuget/concepts/package-versioning#version-ranges for version ranges documentation.
+        /// <example>
+        /// To get the latest version 3 of the Community Server binaries:
+        /// <code>
+        /// [Product.CommunityServer] = VersionRange.Parse("3.*")
+        /// </code>
+        /// </example>
+        /// </summary>
+        public IReadOnlyDictionary<Product, VersionRange> VersionRanges { get; init; } = new Dictionary<Product, VersionRange>
+        {
+            [Product.CommunityServer] = new(VersionRange.AllStable, new FloatRange(NuGetVersionFloatBehavior.Major)),
+            [Product.DatabaseTools] = new(VersionRange.AllStable, new FloatRange(NuGetVersionFloatBehavior.Major)),
         };
     }
 }

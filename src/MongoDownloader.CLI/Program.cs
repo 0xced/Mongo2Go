@@ -62,26 +62,28 @@ namespace MongoDownloader.CLI
             }
         }
 
-        private static async Task<ByteSize> RunAsync(ProgressContext context, MongoDbDownloader downloader, DirectoryInfo toolsDirectory, CancellationToken cancellationToken)
+        private static async Task<ByteSize> RunAsync(ProgressContext context, IMongoDbDownloader downloader, DirectoryInfo toolsDirectory, CancellationToken cancellationToken)
         {
             const double initialMaxValue = double.Epsilon;
             var globalProgress = context.AddTask("Downloading MongoDB", maxValue: initialMaxValue);
 
-            var (communityServerVersion, communityServerArchives) = await downloader.GetArchivesAsync(Product.CommunityServer, cancellationToken);
-            globalProgress.Description = $"Downloading MongoDB Community Server {communityServerVersion.Number}";
+            var communityServerArchives = await downloader.GetArchivesAsync(Product.CommunityServer, cancellationToken);
+            var communityServerVersion = communityServerArchives.FirstOrDefault()?.Version;
+            globalProgress.Description = $"Downloading MongoDB Community Server {communityServerVersion}";
 
-            var (databaseToolsVersion, databaseToolsArchives) = await downloader.GetArchivesAsync(Product.DatabaseTools, cancellationToken);
-            globalProgress.Description = $"Downloading MongoDB Community Server {communityServerVersion.Number} and Database Tools {databaseToolsVersion.Number}";
+            var databaseToolsArchives = await downloader.GetArchivesAsync(Product.DatabaseTools, cancellationToken);
+            var databaseToolsVersion = databaseToolsArchives.FirstOrDefault()?.Version;
+            globalProgress.Description = $"Downloading MongoDB Community Server {communityServerVersion} and Database Tools {databaseToolsVersion}";
 
             var tasks = new List<Task<ByteSize>>();
             var allArchiveProgresses = new List<ProgressTask>();
             foreach (var archive in communityServerArchives.Concat(databaseToolsArchives))
             {
                 var archiveProgress = context.AddTask($"Downloading {archive} from {archive.Url}", maxValue: initialMaxValue);
-                var directoryName = $"mongodb-{archive.Platform.ToString().ToLowerInvariant()}-{archive.Architecture.ToString().ToLowerInvariant()}-{communityServerVersion.Number}-database-tools-{databaseToolsVersion.Number}";
+                var directoryName = $"mongodb-{archive.Platform.ToString().ToLowerInvariant()}-{archive.Architecture.ToString().ToLowerInvariant()}-{communityServerVersion}-database-tools-{databaseToolsVersion}";
                 var extractDirectory = new DirectoryInfo(Path.Combine(toolsDirectory.FullName, directoryName));
                 allArchiveProgresses.Add(archiveProgress);
-                var progress = new ArchiveProgress(archiveProgress, globalProgress, allArchiveProgresses, archive, $"✅ Downloaded and extracted MongoDB Community Server {communityServerVersion.Number} and Database Tools {databaseToolsVersion.Number} into {new Uri(toolsDirectory.FullName).AbsoluteUri}");
+                var progress = new ArchiveProgress(archiveProgress, globalProgress, allArchiveProgresses, archive, $"✅ Downloaded and extracted MongoDB Community Server {communityServerVersion} and Database Tools {databaseToolsVersion} into {new Uri(toolsDirectory.FullName).AbsoluteUri}");
                 tasks.Add(downloader.ProcessArchiveAsync(archive, extractDirectory, progress, cancellationToken));
             }
             var strippedSizes = await Task.WhenAll(tasks);

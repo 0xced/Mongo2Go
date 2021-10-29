@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Runtime.InteropServices;
 using System.Text.Json.Serialization;
 
 // ReSharper disable AutoPropertyCanBeMadeGetOnly.Global
@@ -15,22 +14,19 @@ namespace MongoDownloader
     internal class Release
     {
         [JsonPropertyName("versions")]
-        public List<Version> Versions { get; init; } = new();
+        public IReadOnlyCollection<Version> Versions { get; init; } = new List<Version>();
     }
 
-    internal class Version : IVersion
+    internal class Version
     {
         [JsonPropertyName("version")]
         public string Number { get; init; } = "";
 
-        [JsonPropertyName("production_release")]
-        public bool Production { get; init; } = false;
-
         [JsonPropertyName("downloads")]
-        public List<Download> Downloads { get; init; } = new();
+        public IReadOnlyCollection<Download> Downloads { get; init; } = new List<Download>();
     }
 
-    internal class Download : IArchive
+    internal class Download
     {
         /// <summary>
         /// Used to identify the platform for the Community Server archives
@@ -52,16 +48,6 @@ namespace MongoDownloader
 
         [JsonPropertyName("archive")]
         public Archive Archive { get; init; } = new();
-
-        public Product Product { get; set; }
-
-        public Platform Platform { get; set; }
-
-        public Architecture Architecture { get; set; }
-
-        public Uri Url => Archive.Url;
-
-        public override string ToString() => $"{Product} for {Platform}/{Architecture.ToString().ToLowerInvariant()}";
     }
 
     internal class Archive
