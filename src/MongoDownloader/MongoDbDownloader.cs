@@ -109,7 +109,7 @@ namespace MongoDownloader
                 var downloads = version.Downloads.OrderBy(e => platformName(e)).ThenBy(e => e.Arch);
                 var messages = Enumerable.Empty<string>()
                     .Append($"Download not found for {product} {platform}/{architecture}.")
-                    .Append($"  Available downloads for version {version}:")
+                    .Append($"  Available downloads for version {version.Number}:")
                     .Concat(downloads.Select(e => $"    - {platformName(e)}/{e.Arch} ({e.Edition})"));
                 throw new InvalidOperationException(string.Join(Environment.NewLine, messages));
             }
