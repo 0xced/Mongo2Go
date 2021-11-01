@@ -35,7 +35,7 @@ namespace MongoDownloader
             var cacheFile = new FileInfo(Path.Combine(_options.CacheDirectory.FullName, archiveUrl.Segments.Last()));
             using var cacheStream = new FileStream(cacheFile.FullName, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
             var stopwatch = Stopwatch.StartNew();
-            using var httpStream = new HttpStream(archiveUrl, cacheStream, ownStream: false, CachePageSize, cached: null);
+            using var httpStream = new HttpStream(archiveUrl, cacheStream, ownStream: false, CachePageSize, cached: null, _options.HttpClient);
             httpStream.RangeDownloaded += (_, args) =>
             {
                 bytesTransferred += args.Length;
