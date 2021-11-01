@@ -11,7 +11,7 @@ using NuGet.Versioning;
 
 namespace MongoDownloader
 {
-    public class MongoDbDownloader : IMongoDbDownloader
+    internal class MongoDbDownloader : IMongoDbDownloader
     {
         private readonly ArchiveExtractor _extractor;
         private readonly Options _options;

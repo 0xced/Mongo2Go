@@ -15,7 +15,7 @@ using ICSharpCode.SharpZipLib.Zip;
 
 namespace MongoDownloader
 {
-    public class ArchiveExtractor
+    internal class ArchiveExtractor
     {
         private const int CachePageSize = 4194304; // 4 MiB
 

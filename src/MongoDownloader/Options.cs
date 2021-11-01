@@ -8,6 +8,9 @@ using NuGet.Versioning;
 
 namespace MongoDownloader
 {
+    /// <summary>
+    /// Options to configure how to download the MongoDB Community Server and Database Tools binaries.
+    /// </summary>
     public class Options
     {
         /// <summary>

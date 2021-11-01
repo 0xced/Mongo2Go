@@ -33,8 +33,7 @@ namespace MongoDownloader.CLI
                 var options = new Options();
                 var performStrip = args.All(e => e != "--no-strip");
                 var binaryStripper = performStrip ? await GetBinaryStripperAsync(cancellationTokenSource.Token) : null;
-                var archiveExtractor = new ArchiveExtractor(options);
-                var downloader = new MongoDbDownloader(archiveExtractor, options);
+                var downloader = MongoDbDownloaderFactory.Create(options);
                 var strippedSize = await AnsiConsole
                     .Progress()
                     .Columns(
