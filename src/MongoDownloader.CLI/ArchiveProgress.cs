@@ -7,7 +7,7 @@ using Spectre.Console;
 
 namespace MongoDownloader.CLI
 {
-    public class ArchiveProgress : IArchiveProgress
+    public class ArchiveProgress : IProgress<ICopyProgress>
     {
         private readonly ProgressTask _archiveProgress;
         private readonly ProgressTask _globalProgress;

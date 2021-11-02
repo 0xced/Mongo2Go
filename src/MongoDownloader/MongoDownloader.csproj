@@ -9,8 +9,6 @@
   
   <ItemGroup>
     <PackageReference Include="bloomtom.HttpProgress" Version="2.3.2" />
-    <PackageReference Include="ByteSize" Version="2.1.0" />
-    <PackageReference Include="CliWrap" Version="3.3.3" />
     <PackageReference Include="Espresso3389.HttpStream" Version="2.0.52.3" />
     <PackageReference Include="IsExternalInit" Version="1.0.1" PrivateAssets="all" />
     <PackageReference Include="NuGet.Versioning" Version="5.11.0" />

@@ -7,7 +7,6 @@ using System.Net.Http;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using ByteSizeLib;
 using Espresso3389.HttpStream;
 using HttpProgress;
 using ICSharpCode.SharpZipLib.GZip;
@@ -18,18 +17,16 @@ namespace MongoDownloader
 {
     public class ArchiveExtractor
     {
-        private static readonly int CachePageSize = Convert.ToInt32(ByteSize.FromMebiBytes(4).Bytes);
+        private const int CachePageSize = 4194304; // 4 MiB
 
         private readonly Options _options;
-        private readonly BinaryStripper? _binaryStripper;
 
-        public ArchiveExtractor(Options options, BinaryStripper? binaryStripper)
+        public ArchiveExtractor(Options options)
         {
             _options = options ?? throw new ArgumentNullException(nameof(options));
-            _binaryStripper = binaryStripper;
         }
 
-        public async Task<IEnumerable<Task<ByteSize>>> DownloadExtractZipArchiveAsync(IArchive archive, DirectoryInfo extractDirectory, IProgress<ICopyProgress> progress, CancellationToken cancellationToken)
+        public async Task<IReadOnlyCollection<FileInfo>> DownloadExtractZipArchiveAsync(IArchive archive, DirectoryInfo extractDirectory, IProgress<ICopyProgress>? progress, CancellationToken cancellationToken)
         {
             var bytesTransferred = 0L;
             var archiveUrl = archive.Url;
@@ -42,12 +39,12 @@ namespace MongoDownloader
             httpStream.RangeDownloaded += (_, args) =>
             {
                 bytesTransferred += args.Length;
-                progress.Report(new CopyProgress(stopwatch.Elapsed, 0, bytesTransferred, contentLength));
+                progress?.Report(new CopyProgress(stopwatch.Elapsed, 0, bytesTransferred, contentLength));
             };
             using var zipFile = new ZipFile(httpStream);
             var binaryRegex = _options.Binaries[(archive.Product, archive.Platform)];
             var licenseRegex = _options.Licenses[(archive.Product, archive.Platform)];
-            var stripTasks = new List<Task<ByteSize>>();
+            var binaryFiles = new List<FileInfo>();
             foreach (var entry in zipFile.Cast<ZipEntry>().Where(e => e.IsFile))
             {
                 var nameParts = entry.Name.Split('\\', '/').Skip(1).ToList();
@@ -62,17 +59,17 @@ namespace MongoDownloader
                     using var destinationStream = destinationFile.OpenWrite();
                     using var inputStream = zipFile.GetInputStream(entry);
                     await inputStream.CopyToAsync(destinationStream);
-                    if (isBinaryFile && _binaryStripper is not null)
+                    if (isBinaryFile)
                     {
-                        stripTasks.Add(_binaryStripper.StripAsync(destinationFile, cancellationToken));
+                        binaryFiles.Add(destinationFile);
                     }
                 }
             }
-            progress.Report(new CopyProgress(stopwatch.Elapsed, 0, bytesTransferred, bytesTransferred));
-            return stripTasks;
+            progress?.Report(new CopyProgress(stopwatch.Elapsed, 0, bytesTransferred, bytesTransferred));
+            return binaryFiles;
         }
 
-        public IEnumerable<Task<ByteSize>> ExtractArchive(IArchive archive, FileInfo archiveFile, DirectoryInfo extractDirectory, CancellationToken cancellationToken)
+        public IReadOnlyCollection<FileInfo> ExtractArchive(IArchive archive, FileInfo archiveFile, DirectoryInfo extractDirectory, CancellationToken cancellationToken)
         {
             return Path.GetExtension(archiveFile.Name) switch
             {
@@ -81,7 +78,7 @@ namespace MongoDownloader
             };
         }
 
-        private IEnumerable<Task<ByteSize>> ExtractTarGzipArchive(IArchive archive, FileInfo archiveFile, DirectoryInfo extractDirectory, CancellationToken cancellationToken)
+        private IReadOnlyCollection<FileInfo> ExtractTarGzipArchive(IArchive archive, FileInfo archiveFile, DirectoryInfo extractDirectory, CancellationToken cancellationToken)
         {
             // See https://github.com/icsharpcode/SharpZipLib/wiki/GZip-and-Tar-Samples#-simple-full-extract-from-a-tgz-targz
             using var archiveStream = archiveFile.OpenRead();
@@ -97,12 +94,12 @@ namespace MongoDownloader
             return CleanupExtractedFiles(archive, extractDirectory, extractedFileNames);
         }
 
-        private IEnumerable<Task<ByteSize>> CleanupExtractedFiles(IArchive archive, DirectoryInfo extractDirectory, IEnumerable<string> extractedFileNames)
+        private IReadOnlyCollection<FileInfo> CleanupExtractedFiles(IArchive archive, DirectoryInfo extractDirectory, IEnumerable<string> extractedFileNames)
         {
             var rootDirectoryToDelete = new HashSet<string>();
             var binaryRegex = _options.Binaries[(archive.Product, archive.Platform)];
             var licenseRegex = _options.Licenses[(archive.Product, archive.Platform)];
-            var stripTasks = new List<Task<ByteSize>>();
+            var binaryFiles = new List<FileInfo>();
             foreach (var extractedFileName in extractedFileNames.Select(e => e.Replace('\\', Path.DirectorySeparatorChar).Replace('/', Path.DirectorySeparatorChar)))
             {
                 var extractedFile = new FileInfo(Path.Combine(extractDirectory.FullName, extractedFileName));
@@ -125,9 +122,9 @@ namespace MongoDownloader
                     var destinationFile = new FileInfo(Path.Combine(destinationPathParts.Prepend(extractDirectory.FullName).ToArray()));
                     destinationFile.Directory?.Create();
                     extractedFile.MoveTo(destinationFile.FullName);
-                    if (isBinaryFile && _binaryStripper is not null)
+                    if (isBinaryFile)
                     {
-                        stripTasks.Add(_binaryStripper.StripAsync(destinationFile));
+                        binaryFiles.Add(destinationFile);
                     }
                 }
             }
@@ -135,7 +132,7 @@ namespace MongoDownloader
             var binDirectory = new DirectoryInfo(Path.Combine(rootArchiveDirectory.FullName, "bin"));
             binDirectory.Delete(recursive: false);
             rootArchiveDirectory.Delete(recursive: false);
-            return stripTasks;
+            return binaryFiles;
         }
 
         private static string ProductDirectoryName(Product product)

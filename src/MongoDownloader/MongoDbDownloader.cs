@@ -6,7 +6,6 @@ using System.Net.Http.Json;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
-using ByteSizeLib;
 using HttpProgress;
 using NuGet.Versioning;
 
@@ -35,34 +34,30 @@ namespace MongoDownloader
             return _options.PlatformIdentifiers.Keys.SelectMany(platform => GetArchives(product, platform, version)).ToList();
         }
 
-        public async Task<ByteSize> ProcessArchiveAsync(IArchive archive, DirectoryInfo extractDirectory, IArchiveProgress progress, CancellationToken cancellationToken)
+        public async Task<IReadOnlyCollection<FileInfo>> ProcessArchiveAsync(IArchive archive, DirectoryInfo extractDirectory, IProgress<ICopyProgress>? progress, CancellationToken cancellationToken)
         {
-            IEnumerable<Task<ByteSize>> stripTasks;
+            IReadOnlyCollection<FileInfo> binaryFiles;
             var archiveExtension = Path.GetExtension(archive.Url.AbsolutePath);
             if (archiveExtension == ".zip")
             {
-                stripTasks = await _extractor.DownloadExtractZipArchiveAsync(archive, extractDirectory, progress, cancellationToken);
+                binaryFiles = await _extractor.DownloadExtractZipArchiveAsync(archive, extractDirectory, progress, cancellationToken);
             }
             else
             {
                 var archiveFile = await DownloadArchiveAsync(archive, progress, cancellationToken);
-                stripTasks = _extractor.ExtractArchive(archive, archiveFile, extractDirectory, cancellationToken);
+                binaryFiles = _extractor.ExtractArchive(archive, archiveFile, extractDirectory, cancellationToken);
             }
-            progress.Report("Stripping binaries");
-            var completedStripTasks = await Task.WhenAll(stripTasks);
-            var totalStrippedSize = completedStripTasks.Aggregate(new ByteSize(0), (current, strippedSize) => current + strippedSize);
-            progress.ReportCompleted(totalStrippedSize);
-            return totalStrippedSize;
+            return binaryFiles;
         }
 
-        private async Task<FileInfo> DownloadArchiveAsync(IArchive archive, IProgress<ICopyProgress> progress, CancellationToken cancellationToken)
+        private async Task<FileInfo> DownloadArchiveAsync(IArchive archive, IProgress<ICopyProgress>? progress, CancellationToken cancellationToken)
         {
             _options.CacheDirectory.Create();
             var destinationFile = new FileInfo(Path.Combine(_options.CacheDirectory.FullName, archive.Url.Segments.Last()));
             var useCache = bool.TryParse(Environment.GetEnvironmentVariable("MONGO2GO_DOWNLOADER_USE_CACHED_FILE") ?? "", out var useCachedFile) && useCachedFile;
             if (useCache && destinationFile.Exists)
             {
-                progress.Report(new CopyProgress(TimeSpan.Zero, 0, 1, 1));
+                progress?.Report(new CopyProgress(TimeSpan.Zero, 0, 1, 1));
                 return destinationFile;
             }
             using var destinationStream = destinationFile.OpenWrite();
@@ -111,7 +106,7 @@ namespace MongoDownloader
 
             if (matchingDownloads.Count == 0)
             {
-                var downloads = version.Downloads.OrderBy(e => e.Target).ThenBy(e => e.Arch);
+                var downloads = version.Downloads.OrderBy(e => platformName(e)).ThenBy(e => e.Arch);
                 var messages = Enumerable.Empty<string>()
                     .Append($"Download not found for {product} {platform}/{architecture}.")
                     .Append($"  Available downloads for version {version}:")

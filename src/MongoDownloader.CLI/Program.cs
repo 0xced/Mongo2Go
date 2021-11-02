@@ -33,7 +33,7 @@ namespace MongoDownloader.CLI
                 var options = new Options();
                 var performStrip = args.All(e => e != "--no-strip");
                 var binaryStripper = performStrip ? await GetBinaryStripperAsync(cancellationTokenSource.Token) : null;
-                var archiveExtractor = new ArchiveExtractor(options, binaryStripper);
+                var archiveExtractor = new ArchiveExtractor(options);
                 var downloader = new MongoDbDownloader(archiveExtractor, options);
                 var strippedSize = await AnsiConsole
                     .Progress()
@@ -44,7 +44,7 @@ namespace MongoDownloader.CLI
                         new DownloadedColumn(),
                         new TaskDescriptionColumn { Alignment = Justify.Left }
                     )
-                    .StartAsync(async context => await RunAsync(context, downloader, toolsDirectory, cancellationTokenSource.Token));
+                    .StartAsync(async context => await RunAsync(context, downloader, binaryStripper, toolsDirectory, cancellationTokenSource.Token));
 
                 if (performStrip)
                 {
@@ -62,7 +62,7 @@ namespace MongoDownloader.CLI
             }
         }
 
-        private static async Task<ByteSize> RunAsync(ProgressContext context, IMongoDbDownloader downloader, DirectoryInfo toolsDirectory, CancellationToken cancellationToken)
+        private static async Task<ByteSize> RunAsync(ProgressContext context, IMongoDbDownloader downloader, BinaryStripper? binaryStripper, DirectoryInfo toolsDirectory, CancellationToken cancellationToken)
         {
             const double initialMaxValue = double.Epsilon;
             var globalProgress = context.AddTask("Downloading MongoDB", maxValue: initialMaxValue);
@@ -84,10 +84,29 @@ namespace MongoDownloader.CLI
                 var extractDirectory = new DirectoryInfo(Path.Combine(toolsDirectory.FullName, directoryName));
                 allArchiveProgresses.Add(archiveProgress);
                 var progress = new ArchiveProgress(archiveProgress, globalProgress, allArchiveProgresses, archive, $"✅ Downloaded and extracted MongoDB Community Server {communityServerVersion} and Database Tools {databaseToolsVersion} into {new Uri(toolsDirectory.FullName).AbsoluteUri}");
-                tasks.Add(downloader.ProcessArchiveAsync(archive, extractDirectory, progress, cancellationToken));
+                var processArchiveTask = downloader.ProcessArchiveAsync(archive, extractDirectory, progress, cancellationToken);
+                tasks.Add(processArchiveTask.Combine(StripAsync, binaryStripper, progress, cancellationToken));
             }
             var strippedSizes = await Task.WhenAll(tasks);
-            return strippedSizes.Aggregate(new ByteSize(0), (current, strippedSize) => current + strippedSize);
+            return strippedSizes.Sum();
+        }
+
+        private static async Task<ByteSize> StripAsync(IReadOnlyCollection<FileInfo> binaryFiles, BinaryStripper? binaryStripper, ArchiveProgress progress, CancellationToken cancellationToken)
+        {
+            ByteSize strippedSize;
+            if (binaryStripper is not null && binaryFiles.Count > 0)
+            {
+                progress.Report("Stripping binaries");
+                var stripTasks = binaryFiles.Select(binaryFile => binaryStripper.StripAsync(binaryFile, cancellationToken));
+                var strippedSizes = await Task.WhenAll(stripTasks);
+                strippedSize = strippedSizes.Sum();
+            }
+            else
+            {
+                strippedSize = new ByteSize(0);
+            }
+            progress.ReportCompleted(strippedSize);
+            return strippedSize;
         }
 
         private static DirectoryInfo GetToolsDirectory()

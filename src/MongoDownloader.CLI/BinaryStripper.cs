@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using ByteSizeLib;
 using CliWrap;
 
-namespace MongoDownloader
+namespace MongoDownloader.CLI
 {
     public class BinaryStripper
     {
