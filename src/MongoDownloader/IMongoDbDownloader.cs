@@ -27,9 +27,10 @@ namespace MongoDownloader
         /// Gets a collection <see cref="IArchive"/> for the specified <paramref name="product"/> that can contain multiple <see cref="OSPlatform"/> and <see cref="Architecture"/> combination.
         /// </summary>
         /// <param name="product">The MongoDB <see cref="Product"/></param>
+        /// <param name="platforms">The supported <see cref="OSPlatform"/>.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> that can be used to cancel the operation.</param>
         /// <returns>A collection of <see cref="IArchive"/> that can be passed to <see cref="ProcessArchiveAsync"/>.</returns>
-        Task<IReadOnlyCollection<IArchive>> GetArchivesAsync(Product product, CancellationToken cancellationToken = default);
+        Task<IReadOnlyCollection<IArchive>> GetArchivesAsync(Product product, IEnumerable<OSPlatform> platforms, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Downloads, then extracts the <paramref name="archive"/> into the specified <paramref name="extractDirectory"/>.

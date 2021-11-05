@@ -30,10 +30,9 @@ namespace MongoDownloader.CLI
                     eventArgs.Cancel = !cancellationTokenSource.IsCancellationRequested;
                     cancellationTokenSource.Cancel();
                 };
-                var options = new Options();
                 var performStrip = args.All(e => e != "--no-strip");
                 var binaryStripper = performStrip ? await GetBinaryStripperAsync(cancellationTokenSource.Token) : null;
-                var downloader = MongoDbDownloaderFactory.Create(options);
+                var downloader = MongoDbDownloaderFactory.Create(new Options());
                 var strippedSize = await AnsiConsole
                     .Progress()
                     .Columns(
@@ -63,14 +62,16 @@ namespace MongoDownloader.CLI
 
         private static async Task<ByteSize> RunAsync(ProgressContext context, IMongoDbDownloader downloader, BinaryStripper? binaryStripper, DirectoryInfo toolsDirectory, CancellationToken cancellationToken)
         {
+            var platforms = new[] { OSPlatform.Linux, OSPlatform.OSX, OSPlatform.Windows };
+
             const double initialMaxValue = double.Epsilon;
             var globalProgress = context.AddTask("Downloading MongoDB", maxValue: initialMaxValue);
 
-            var communityServerArchives = await downloader.GetArchivesAsync(Product.CommunityServer, cancellationToken);
+            var communityServerArchives = await downloader.GetArchivesAsync(Product.CommunityServer, platforms, cancellationToken);
             var communityServerVersion = communityServerArchives.FirstOrDefault()?.Version;
             globalProgress.Description = $"Downloading MongoDB Community Server {communityServerVersion}";
 
-            var databaseToolsArchives = await downloader.GetArchivesAsync(Product.DatabaseTools, cancellationToken);
+            var databaseToolsArchives = await downloader.GetArchivesAsync(Product.DatabaseTools, platforms, cancellationToken);
             var databaseToolsVersion = databaseToolsArchives.FirstOrDefault()?.Version;
             globalProgress.Description = $"Downloading MongoDB Community Server {communityServerVersion} and Database Tools {databaseToolsVersion}";
 

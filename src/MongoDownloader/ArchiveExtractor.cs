@@ -42,19 +42,16 @@ namespace MongoDownloader
                 progress?.Report(new CopyProgress(stopwatch.Elapsed, 0, bytesTransferred, contentLength));
             };
             using var zipFile = new ZipFile(httpStream);
-            var binaryRegex = _options.Binaries[(archive.Product, archive.Platform)];
-            var licenseRegex = _options.Licenses[(archive.Product, archive.Platform)];
+            var binaryRegex = _options.GetBinariesRegex(archive.Product, archive.Platform);
             var binaryFiles = new List<FileInfo>();
             foreach (var entry in zipFile.Cast<ZipEntry>().Where(e => e.IsFile))
             {
                 var nameParts = entry.Name.Split('\\', '/').Skip(1).ToList();
                 var zipEntryPath = string.Join("/", nameParts);
                 var isBinaryFile = binaryRegex.IsMatch(zipEntryPath);
-                var isLicenseFile = licenseRegex.IsMatch(zipEntryPath);
-                if (isBinaryFile || isLicenseFile)
+                if (isBinaryFile)
                 {
-                    var destinationPathParts = isLicenseFile ? nameParts.Prepend(ProductDirectoryName(archive.Product)) : nameParts;
-                    var destinationFile = new FileInfo(Path.Combine(destinationPathParts.Prepend(extractDirectory.FullName).ToArray()));
+                    var destinationFile = new FileInfo(Path.Combine(extractDirectory.FullName, nameParts.Last()));
                     destinationFile.Directory?.Create();
                     using var destinationStream = destinationFile.OpenWrite();
                     using var inputStream = zipFile.GetInputStream(entry);
@@ -97,8 +94,7 @@ namespace MongoDownloader
         private IReadOnlyCollection<FileInfo> CleanupExtractedFiles(IArchive archive, DirectoryInfo extractDirectory, IEnumerable<string> extractedFileNames)
         {
             var rootDirectoryToDelete = new HashSet<string>();
-            var binaryRegex = _options.Binaries[(archive.Product, archive.Platform)];
-            var licenseRegex = _options.Licenses[(archive.Product, archive.Platform)];
+            var binaryRegex = _options.GetBinariesRegex(archive.Product, archive.Platform);
             var binaryFiles = new List<FileInfo>();
             foreach (var extractedFileName in extractedFileNames.Select(e => e.Replace('\\', Path.DirectorySeparatorChar).Replace('/', Path.DirectorySeparatorChar)))
             {
@@ -107,19 +103,13 @@ namespace MongoDownloader
                 var entryFileName = string.Join("/", parts.Skip(1));
                 rootDirectoryToDelete.Add(parts[0]);
                 var isBinaryFile = binaryRegex.IsMatch(entryFileName);
-                var isLicenseFile = licenseRegex.IsMatch(entryFileName);
-                if (!(isBinaryFile || isLicenseFile))
+                if (!isBinaryFile)
                 {
                     extractedFile.Delete();
                 }
                 else
                 {
-                    var destinationPathParts = parts.Skip(1);
-                    if (isLicenseFile)
-                    {
-                        destinationPathParts = destinationPathParts.Prepend(ProductDirectoryName(archive.Product));
-                    }
-                    var destinationFile = new FileInfo(Path.Combine(destinationPathParts.Prepend(extractDirectory.FullName).ToArray()));
+                    var destinationFile = new FileInfo(Path.Combine(extractDirectory.FullName, parts.Last()));
                     destinationFile.Directory?.Create();
                     extractedFile.MoveTo(destinationFile.FullName);
                     if (isBinaryFile)
@@ -133,16 +123,6 @@ namespace MongoDownloader
             binDirectory.Delete(recursive: false);
             rootArchiveDirectory.Delete(recursive: false);
             return binaryFiles;
-        }
-
-        private static string ProductDirectoryName(Product product)
-        {
-            return product switch
-            {
-                Product.CommunityServer => "community-server",
-                Product.DatabaseTools => "database-tools",
-                _ => throw new ArgumentOutOfRangeException(nameof(product), product, null)
-            };
         }
     }
 }

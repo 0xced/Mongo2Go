@@ -28,10 +28,10 @@ namespace MongoDownloader
             return GetArchive(product, platform, architecture, version);
         }
 
-        public async Task<IReadOnlyCollection<IArchive>> GetArchivesAsync(Product product, CancellationToken cancellationToken)
+        public async Task<IReadOnlyCollection<IArchive>> GetArchivesAsync(Product product, IEnumerable<OSPlatform> platforms, CancellationToken cancellationToken)
         {
             var version = await GetVersionAsync(product, cancellationToken);
-            return _options.PlatformIdentifiers.Keys.SelectMany(platform => GetArchives(product, platform, version)).ToList();
+            return platforms.SelectMany(platform => GetArchives(product, platform, version)).ToList();
         }
 
         public async Task<IReadOnlyCollection<FileInfo>> ProcessArchiveAsync(IArchive archive, DirectoryInfo extractDirectory, IProgress<ICopyProgress>? progress, CancellationToken cancellationToken)
@@ -75,42 +75,42 @@ namespace MongoDownloader
             };
             var release = await _options.HttpClient.GetFromJsonAsync<Release>(url, cancellationToken) ?? throw new InvalidOperationException($"Failed to deserialize {nameof(Release)}");
             var semanticVersions = release.Versions.Select(e => new NuGetVersion(e.Number));
-            var range = _options.VersionRanges[product];
+            var range = _options.GetVersionRange(product);
             var bestMatch = range.FindBestMatch(semanticVersions) ?? throw new InvalidOperationException($"No {product} matching {range} version was found.");
             return release.Versions.Single(e => e.Number == bestMatch.OriginalVersion);
         }
 
         private IEnumerable<IArchive> GetArchives(Product product, OSPlatform platform, Version version)
         {
-            return _options.Architectures[platform].Select(architecture => GetArchive(product, platform, architecture, version));
+            return _options.GetArchitectures(platform).Select(architecture => GetArchive(product, platform, architecture, version));
         }
 
         private IArchive GetArchive(Product product, OSPlatform platform, Architecture architecture, Version version)
         {
-            Func<Download, string> platformName = product switch
+            Func<Download, string> getPlatformName = product switch
             {
                 Product.CommunityServer => download => download.Target,
                 Product.DatabaseTools => download => download.Name,
                 _ => throw new ArgumentOutOfRangeException(nameof(product), product, $"The value of argument '{nameof(product)}' ({product}) is invalid for enum type '{nameof(Product)}'.")
             };
 
-            var platformRegex = _options.PlatformIdentifiers[platform];
-            var editionRegex = product == Product.CommunityServer ? _options.Edition : null;
+            var platformName = _options.GetPlatformName(platform);
+            var edition = product == Product.CommunityServer ? _options.GetEdition(platform) : null;
 
-            var architectureRegex = _options.ArchitectureIdentifiers[architecture];
+            var architectureRegex = _options.GetArchitecturesRegex(architecture);
             var matchingDownloads = version.Downloads
-                .Where(e => platformRegex.IsMatch(platformName(e)))
+                .Where(e => platformName == getPlatformName(e))
                 .Where(e => architectureRegex.IsMatch(e.Arch))
-                .Where(e => editionRegex?.IsMatch(e.Edition) ?? true)
+                .Where(e => edition == null || edition == e.Edition)
                 .ToList();
 
             if (matchingDownloads.Count == 0)
             {
-                var downloads = version.Downloads.OrderBy(e => platformName(e)).ThenBy(e => e.Arch);
+                var downloads = version.Downloads.OrderBy(e => getPlatformName(e)).ThenBy(e => e.Arch);
                 var messages = Enumerable.Empty<string>()
                     .Append($"Download not found for {product} {platform}/{architecture}.")
                     .Append($"  Available downloads for version {version.Number}:")
-                    .Concat(downloads.Select(e => $"    - {platformName(e)}/{e.Arch} ({e.Edition})"));
+                    .Concat(downloads.Select(e => $"    - {getPlatformName(e)}/{e.Arch} ({e.Edition})"));
                 throw new InvalidOperationException(string.Join(Environment.NewLine, messages));
             }
 
