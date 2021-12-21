@@ -56,10 +56,7 @@ namespace MongoDownloader
                     using var destinationStream = destinationFile.OpenWrite();
                     using var inputStream = zipFile.GetInputStream(entry);
                     await inputStream.CopyToAsync(destinationStream);
-                    if (isBinaryFile)
-                    {
-                        binaryFiles.Add(destinationFile);
-                    }
+                    binaryFiles.Add(destinationFile);
                 }
             }
             progress?.Report(new CopyProgress(stopwatch.Elapsed, 0, bytesTransferred, bytesTransferred));
@@ -103,19 +100,16 @@ namespace MongoDownloader
                 var entryFileName = string.Join("/", parts.Skip(1));
                 rootDirectoryToDelete.Add(parts[0]);
                 var isBinaryFile = binaryRegex.IsMatch(entryFileName);
-                if (!isBinaryFile)
-                {
-                    extractedFile.Delete();
-                }
-                else
+                if (isBinaryFile)
                 {
                     var destinationFile = new FileInfo(Path.Combine(extractDirectory.FullName, parts.Last()));
                     destinationFile.Directory?.Create();
                     extractedFile.MoveTo(destinationFile.FullName);
-                    if (isBinaryFile)
-                    {
-                        binaryFiles.Add(destinationFile);
-                    }
+                    binaryFiles.Add(destinationFile);
+                }
+                else
+                {
+                    extractedFile.Delete();
                 }
             }
             var rootArchiveDirectory = new DirectoryInfo(Path.Combine(extractDirectory.FullName, rootDirectoryToDelete.Single()));
