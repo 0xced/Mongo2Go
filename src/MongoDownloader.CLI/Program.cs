@@ -62,16 +62,22 @@ namespace MongoDownloader.CLI
 
         private static async Task<ByteSize> RunAsync(ProgressContext context, IMongoDbDownloader downloader, BinaryStripper? binaryStripper, DirectoryInfo toolsDirectory, CancellationToken cancellationToken)
         {
-            var platforms = new[] { OSPlatform.Linux, OSPlatform.OSX, OSPlatform.Windows };
+            var targets = new Target[]
+            {
+                new(OSPlatform.Linux, Architecture.Arm64),
+                new(OSPlatform.Linux, Architecture.X64),
+                new(OSPlatform.OSX, Architecture.X64),
+                new(OSPlatform.Windows, Architecture.X64),
+            };
 
             const double initialMaxValue = double.Epsilon;
             var globalProgress = context.AddTask("Downloading MongoDB", maxValue: initialMaxValue);
 
-            var communityServerArchives = await downloader.GetArchivesAsync(Product.CommunityServer, platforms, cancellationToken);
+            var communityServerArchives = await downloader.GetArchivesAsync(Product.CommunityServer, targets, cancellationToken);
             var communityServerVersion = communityServerArchives.FirstOrDefault()?.Version;
             globalProgress.Description = $"Downloading MongoDB Community Server {communityServerVersion}";
 
-            var databaseToolsArchives = await downloader.GetArchivesAsync(Product.DatabaseTools, platforms, cancellationToken);
+            var databaseToolsArchives = await downloader.GetArchivesAsync(Product.DatabaseTools, targets, cancellationToken);
             var databaseToolsVersion = databaseToolsArchives.FirstOrDefault()?.Version;
             globalProgress.Description = $"Downloading MongoDB Community Server {communityServerVersion} and Database Tools {databaseToolsVersion}";
 

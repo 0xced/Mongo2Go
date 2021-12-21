@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http.Json;
-using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using HttpProgress;
@@ -22,16 +21,16 @@ namespace MongoDownloader
             _options = options ?? throw new ArgumentNullException(nameof(options));
         }
 
-        public async Task<IArchive> GetArchiveAsync(Product product, OSPlatform platform, Architecture architecture, CancellationToken cancellationToken)
+        public async Task<IArchive> GetArchiveAsync(Product product, Target target, CancellationToken cancellationToken)
         {
             var version = await GetVersionAsync(product, cancellationToken);
-            return GetArchive(product, platform, architecture, version);
+            return GetArchive(product, target, version);
         }
 
-        public async Task<IReadOnlyCollection<IArchive>> GetArchivesAsync(Product product, IEnumerable<OSPlatform> platforms, CancellationToken cancellationToken)
+        public async Task<IReadOnlyCollection<IArchive>> GetArchivesAsync(Product product, IEnumerable<Target> targets, CancellationToken cancellationToken)
         {
             var version = await GetVersionAsync(product, cancellationToken);
-            return platforms.SelectMany(platform => GetArchives(product, platform, version)).ToList();
+            return targets.Select(target => GetArchive(product, target, version)).ToList();
         }
 
         public async Task<IReadOnlyCollection<FileInfo>> ProcessArchiveAsync(IArchive archive, DirectoryInfo extractDirectory, IProgress<ICopyProgress>? progress, CancellationToken cancellationToken)
@@ -80,12 +79,7 @@ namespace MongoDownloader
             return release.Versions.Single(e => e.Number == bestMatch.OriginalVersion);
         }
 
-        private IEnumerable<IArchive> GetArchives(Product product, OSPlatform platform, Version version)
-        {
-            return _options.GetArchitectures(platform).Select(architecture => GetArchive(product, platform, architecture, version));
-        }
-
-        private IArchive GetArchive(Product product, OSPlatform platform, Architecture architecture, Version version)
+        private IArchive GetArchive(Product product, Target target, Version version)
         {
             Func<Download, string> getPlatformName = product switch
             {
@@ -94,9 +88,11 @@ namespace MongoDownloader
                 _ => throw new ArgumentOutOfRangeException(nameof(product), product, $"The value of argument '{nameof(product)}' ({product}) is invalid for enum type '{nameof(Product)}'.")
             };
 
+            var platform = target.Platform;
             var platformName = _options.GetPlatformName(platform);
             var edition = product == Product.CommunityServer ? _options.GetEdition(platform) : null;
 
+            var architecture = target.Architecture;
             var architectureRegex = _options.GetArchitecturesRegex(architecture);
             var matchingDownloads = version.Downloads
                 .Where(e => platformName == getPlatformName(e))

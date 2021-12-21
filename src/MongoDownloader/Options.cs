@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Net.Http;
 using System.Runtime.InteropServices;
@@ -55,23 +54,6 @@ namespace MongoDownloader
 
             if (platform == OSPlatform.Windows)
                 return "windows";
-
-            throw new PlatformNotSupportedException();
-        }
-
-        /// <summary>
-        /// The supported architecture(s) for the specified <paramref name="platform"/>.
-        /// </summary>
-        public virtual IEnumerable<Architecture> GetArchitectures(OSPlatform platform)
-        {
-            if (platform == OSPlatform.Linux)
-                return new[] { Architecture.Arm64, Architecture.X64 };
-
-            if (platform == OSPlatform.OSX)
-                return new[] { Architecture.X64 };
-
-            if (platform == OSPlatform.Windows)
-                return new[] { Architecture.X64 };
 
             throw new PlatformNotSupportedException();
         }

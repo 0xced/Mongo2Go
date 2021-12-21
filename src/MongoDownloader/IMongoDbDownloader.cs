@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using HttpProgress;
@@ -14,23 +13,22 @@ namespace MongoDownloader
     public interface IMongoDbDownloader
     {
         /// <summary>
-        /// Gets an <see cref="IArchive"/> for the specified <paramref name="product"/>, <paramref name="platform"/> and <paramref name="architecture"/>.
+        /// Gets an <see cref="IArchive"/> for the specified <paramref name="product"/> and <paramref name="target"/>.
         /// </summary>
         /// <param name="product">The MongoDB <see cref="Product"/></param>
-        /// <param name="platform">The <see cref="OSPlatform"/> where the MongoDB product can run.</param>
-        /// <param name="architecture">The <see cref="Architecture"/> where the MongoDB product can run.</param>
+        /// <param name="target">The <see cref="Target"/> where the MongoDB product can run.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> that can be used to cancel the operation.</param>
         /// <returns>An <see cref="IArchive"/> that can be passed to <see cref="ProcessArchiveAsync"/>.</returns>
-        Task<IArchive> GetArchiveAsync(Product product, OSPlatform platform, Architecture architecture, CancellationToken cancellationToken = default);
+        Task<IArchive> GetArchiveAsync(Product product, Target target, CancellationToken cancellationToken);
 
         /// <summary>
-        /// Gets a collection <see cref="IArchive"/> for the specified <paramref name="product"/> that can contain multiple <see cref="OSPlatform"/> and <see cref="Architecture"/> combination.
+        /// Gets a collection <see cref="IArchive"/> for the specified <paramref name="product"/> and <paramref name="targets"/>.
         /// </summary>
         /// <param name="product">The MongoDB <see cref="Product"/></param>
-        /// <param name="platforms">The supported <see cref="OSPlatform"/>.</param>
+        /// <param name="targets">A collection of <see cref="Target"/>s where the MongoDB product can run.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> that can be used to cancel the operation.</param>
         /// <returns>A collection of <see cref="IArchive"/> that can be passed to <see cref="ProcessArchiveAsync"/>.</returns>
-        Task<IReadOnlyCollection<IArchive>> GetArchivesAsync(Product product, IEnumerable<OSPlatform> platforms, CancellationToken cancellationToken = default);
+        Task<IReadOnlyCollection<IArchive>> GetArchivesAsync(Product product, IEnumerable<Target> targets, CancellationToken cancellationToken);
 
         /// <summary>
         /// Downloads, then extracts the <paramref name="archive"/> into the specified <paramref name="extractDirectory"/>.
@@ -40,6 +38,6 @@ namespace MongoDownloader
         /// <param name="progress">An optional <seealso cref="IProgress{T}"/> that can be used to track the download progress.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> that can be used to cancel the operation.</param>
         /// <returns>A collection of <seealso cref="FileInfo"/> representing the extracted files from the archive.</returns>
-        Task<IReadOnlyCollection<FileInfo>> ProcessArchiveAsync(IArchive archive, DirectoryInfo extractDirectory, IProgress<ICopyProgress>? progress, CancellationToken cancellationToken = default);
+        Task<IReadOnlyCollection<FileInfo>> ProcessArchiveAsync(IArchive archive, DirectoryInfo extractDirectory, IProgress<ICopyProgress>? progress, CancellationToken cancellationToken);
     }
 }
