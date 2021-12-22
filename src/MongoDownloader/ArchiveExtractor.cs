@@ -56,6 +56,9 @@ namespace MongoDownloader
                     using var destinationStream = destinationFile.OpenWrite();
                     using var inputStream = zipFile.GetInputStream(entry);
                     await inputStream.CopyToAsync(destinationStream);
+                    // See https://github.com/dotnet/runtime/blob/v6.0.0/src/libraries/System.IO.Compression.ZipFile/src/System/IO/Compression/ZipFileExtensions.ZipArchiveEntry.Extract.Unix.cs#L18
+                    // No need to perform & 0x1FF because it's already done by the `Mono.Unix.UnixFileSystemInfo.FileAccessPermissions` setter
+                    destinationFile.SetFileAccessPermissions(entry.ExternalFileAttributes >> 16);
                     binaryFiles.Add(destinationFile);
                 }
             }
@@ -78,23 +81,24 @@ namespace MongoDownloader
             using var archiveStream = archiveFile.OpenRead();
             using var gzipStream = new GZipInputStream(archiveStream);
             using var tarArchive = TarArchive.CreateInputTarArchive(gzipStream, Encoding.UTF8);
-            var extractedFileNames = new List<string>();
+            var extractedEntries = new List<TarEntry>();
             tarArchive.ProgressMessageEvent += (_, entry, _) =>
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                extractedFileNames.Add(entry.Name);
+                extractedEntries.Add(entry);
             };
             tarArchive.ExtractContents(extractDirectory.FullName);
-            return CleanupExtractedFiles(archive, extractDirectory, extractedFileNames);
+            return CleanupExtractedFiles(archive, extractDirectory, extractedEntries);
         }
 
-        private IReadOnlyCollection<FileInfo> CleanupExtractedFiles(IArchive archive, DirectoryInfo extractDirectory, IEnumerable<string> extractedFileNames)
+        private IReadOnlyCollection<FileInfo> CleanupExtractedFiles(IArchive archive, DirectoryInfo extractDirectory, IEnumerable<TarEntry> extractedEntries)
         {
             var rootDirectoryToDelete = new HashSet<string>();
             var binaryRegex = _options.GetBinariesRegex(archive.Product, archive.Platform);
             var binaryFiles = new List<FileInfo>();
-            foreach (var extractedFileName in extractedFileNames.Select(e => e.Replace('\\', Path.DirectorySeparatorChar).Replace('/', Path.DirectorySeparatorChar)))
+            foreach (var entry in extractedEntries)
             {
+                var extractedFileName = entry.Name.Replace('\\', Path.DirectorySeparatorChar).Replace('/', Path.DirectorySeparatorChar);
                 var extractedFile = new FileInfo(Path.Combine(extractDirectory.FullName, extractedFileName));
                 var parts = extractedFileName.Split(Path.DirectorySeparatorChar);
                 var entryFileName = string.Join("/", parts.Skip(1));
@@ -105,6 +109,7 @@ namespace MongoDownloader
                     var destinationFile = new FileInfo(Path.Combine(extractDirectory.FullName, parts.Last()));
                     destinationFile.Directory?.Create();
                     extractedFile.MoveTo(destinationFile.FullName);
+                    destinationFile.SetFileAccessPermissions(entry.TarHeader.Mode);
                     binaryFiles.Add(destinationFile);
                 }
                 else
