@@ -77,50 +77,33 @@ namespace MongoDownloader
 
         private IReadOnlyCollection<FileInfo> ExtractTarGzipArchive(IArchive archive, FileInfo archiveFile, DirectoryInfo extractDirectory, CancellationToken cancellationToken)
         {
-            // See https://github.com/icsharpcode/SharpZipLib/wiki/GZip-and-Tar-Samples#-simple-full-extract-from-a-tgz-targz
+            // See https://github.com/icsharpcode/SharpZipLib/wiki/GZip-and-Tar-Samples#-extract-from-a-tar-with-full-control
             using var archiveStream = archiveFile.OpenRead();
             using var gzipStream = new GZipInputStream(archiveStream);
-            using var tarArchive = TarArchive.CreateInputTarArchive(gzipStream, Encoding.UTF8);
-            var extractedEntries = new List<TarEntry>();
-            tarArchive.ProgressMessageEvent += (_, entry, _) =>
+            using var tarStream = new TarInputStream(gzipStream, Encoding.UTF8);
+            var binaryFiles = new List<FileInfo>();
+
+            var binaryRegex = _options.GetBinariesRegex(archive.Product, archive.Platform);
+            TarEntry entry;
+            while ((entry = tarStream.GetNextEntry()) != null)
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                extractedEntries.Add(entry);
-            };
-            tarArchive.ExtractContents(extractDirectory.FullName);
-            return CleanupExtractedFiles(archive, extractDirectory, extractedEntries);
-        }
 
-        private IReadOnlyCollection<FileInfo> CleanupExtractedFiles(IArchive archive, DirectoryInfo extractDirectory, IEnumerable<TarEntry> extractedEntries)
-        {
-            var rootDirectoryToDelete = new HashSet<string>();
-            var binaryRegex = _options.GetBinariesRegex(archive.Product, archive.Platform);
-            var binaryFiles = new List<FileInfo>();
-            foreach (var entry in extractedEntries)
-            {
-                var extractedFileName = entry.Name.Replace('\\', Path.DirectorySeparatorChar).Replace('/', Path.DirectorySeparatorChar);
-                var extractedFile = new FileInfo(Path.Combine(extractDirectory.FullName, extractedFileName));
-                var parts = extractedFileName.Split(Path.DirectorySeparatorChar);
+                var fileName = entry.Name.Replace('\\', Path.DirectorySeparatorChar).Replace('/', Path.DirectorySeparatorChar);
+                var parts = fileName.Split(Path.DirectorySeparatorChar);
                 var entryFileName = string.Join("/", parts.Skip(1));
-                rootDirectoryToDelete.Add(parts[0]);
                 var isBinaryFile = binaryRegex.IsMatch(entryFileName);
                 if (isBinaryFile)
                 {
                     var destinationFile = new FileInfo(Path.Combine(extractDirectory.FullName, parts.Last()));
                     destinationFile.Directory?.Create();
-                    extractedFile.MoveTo(destinationFile.FullName);
+                    using var destinationStream = destinationFile.OpenWrite();
+                    tarStream.CopyEntryContents(destinationStream);
                     destinationFile.SetFileAccessPermissions(entry.TarHeader.Mode);
                     binaryFiles.Add(destinationFile);
                 }
-                else
-                {
-                    extractedFile.Delete();
-                }
             }
-            var rootArchiveDirectory = new DirectoryInfo(Path.Combine(extractDirectory.FullName, rootDirectoryToDelete.Single()));
-            var binDirectory = new DirectoryInfo(Path.Combine(rootArchiveDirectory.FullName, "bin"));
-            binDirectory.Delete(recursive: false);
-            rootArchiveDirectory.Delete(recursive: false);
+
             return binaryFiles;
         }
     }
