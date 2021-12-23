@@ -48,7 +48,7 @@ namespace MongoDownloader
             var release = await _options.HttpClient.GetFromJsonAsync<Release>(url, cancellationToken) ?? throw new InvalidOperationException($"Failed to deserialize {nameof(Release)}");
             var semanticVersions = release.Versions.Select(e => new NuGetVersion(e.Number));
             var range = _options.GetVersionRange(product);
-            var bestMatch = range.FindBestMatch(semanticVersions) ?? throw new InvalidOperationException($"No {product} matching {range} version was found.");
+            var bestMatch = range.FindBestMatch(semanticVersions) ?? throw new InvalidOperationException($"No {product} version matching {range} was found.");
             return release.Versions.Single(e => e.Number == bestMatch.OriginalVersion);
         }
 
