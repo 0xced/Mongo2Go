@@ -5,7 +5,6 @@ using System.Linq;
 using System.Net.Http.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using HttpProgress;
 using NuGet.Versioning;
 
 namespace MongoDownloader
@@ -33,7 +32,7 @@ namespace MongoDownloader
             return targets.Select(target => GetArchive(product, target, version)).ToList();
         }
 
-        public async Task<IReadOnlyCollection<FileInfo>> ProcessArchiveAsync(IArchive archive, DirectoryInfo extractDirectory, IProgress<ICopyProgress>? progress, CancellationToken cancellationToken)
+        public async Task<IReadOnlyCollection<FileInfo>> ProcessArchiveAsync(IArchive archive, DirectoryInfo extractDirectory, IProgress<ITransferProgress>? progress, CancellationToken cancellationToken)
         {
             return await _extractor.DownloadExtractArchiveAsync(archive, extractDirectory, progress, cancellationToken);
         }

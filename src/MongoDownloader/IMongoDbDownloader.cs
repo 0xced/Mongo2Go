@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using HttpProgress;
 
 namespace MongoDownloader
 {
@@ -38,6 +37,6 @@ namespace MongoDownloader
         /// <param name="progress">An optional <seealso cref="IProgress{T}"/> that can be used to track the download progress.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> that can be used to cancel the operation.</param>
         /// <returns>A collection of <seealso cref="FileInfo"/> representing the extracted files from the archive.</returns>
-        Task<IReadOnlyCollection<FileInfo>> ProcessArchiveAsync(IArchive archive, DirectoryInfo extractDirectory, IProgress<ICopyProgress>? progress, CancellationToken cancellationToken);
+        Task<IReadOnlyCollection<FileInfo>> ProcessArchiveAsync(IArchive archive, DirectoryInfo extractDirectory, IProgress<ITransferProgress>? progress, CancellationToken cancellationToken);
     }
 }

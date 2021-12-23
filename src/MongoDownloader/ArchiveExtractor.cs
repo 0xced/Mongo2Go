@@ -5,7 +5,6 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using HttpProgress;
 using ICSharpCode.SharpZipLib.GZip;
 using ICSharpCode.SharpZipLib.Tar;
 using ICSharpCode.SharpZipLib.Zip;
@@ -21,7 +20,7 @@ namespace MongoDownloader
             _options = options ?? throw new ArgumentNullException(nameof(options));
         }
 
-        public async Task<IReadOnlyCollection<FileInfo>> DownloadExtractArchiveAsync(IArchive archive, DirectoryInfo extractDirectory, IProgress<ICopyProgress>? progress, CancellationToken cancellationToken)
+        public async Task<IReadOnlyCollection<FileInfo>> DownloadExtractArchiveAsync(IArchive archive, DirectoryInfo extractDirectory, IProgress<ITransferProgress>? progress, CancellationToken cancellationToken)
         {
             var fileName = Path.GetFileName(archive.Url.AbsolutePath);
             var archiveExtension = Path.GetExtension(fileName);
@@ -33,7 +32,7 @@ namespace MongoDownloader
             };
         }
 
-        private async Task<IReadOnlyCollection<FileInfo>> DownloadExtractZipArchiveAsync(IArchive archive, DirectoryInfo extractDirectory, IProgress<ICopyProgress>? progress, CancellationToken cancellationToken)
+        private async Task<IReadOnlyCollection<FileInfo>> DownloadExtractZipArchiveAsync(IArchive archive, DirectoryInfo extractDirectory, IProgress<ITransferProgress>? progress, CancellationToken cancellationToken)
         {
             using (var httpStreamProgress = new HttpStreamProgress(_options.HttpClient, _options.CacheDirectory, archive.Url, progress))
             {
@@ -65,7 +64,7 @@ namespace MongoDownloader
             }
         }
 
-        private async Task<IReadOnlyCollection<FileInfo>> DownloadExtractTarGzipArchiveAsync(IArchive archive, DirectoryInfo extractDirectory, IProgress<ICopyProgress>? progress, CancellationToken cancellationToken)
+        private async Task<IReadOnlyCollection<FileInfo>> DownloadExtractTarGzipArchiveAsync(IArchive archive, DirectoryInfo extractDirectory, IProgress<ITransferProgress>? progress, CancellationToken cancellationToken)
         {
             // See https://github.com/icsharpcode/SharpZipLib/wiki/GZip-and-Tar-Samples#-extract-from-a-tar-with-full-control
             using (var httpStreamProgress = new HttpStreamProgress(_options.HttpClient, _options.CacheDirectory, archive.Url, progress))

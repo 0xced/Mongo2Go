@@ -6,7 +6,6 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Espresso3389.HttpStream;
-using HttpProgress;
 
 namespace MongoDownloader
 {
@@ -17,11 +16,11 @@ namespace MongoDownloader
         private readonly HttpClient _httpClient;
         private readonly DirectoryInfo _cacheDirectory;
         private readonly Uri _archiveUrl;
-        private readonly IProgress<ICopyProgress>? _progress;
+        private readonly IProgress<ITransferProgress>? _progress;
         private readonly Stopwatch _stopwatch;
         private long _bytesTransferred;
 
-        public HttpStreamProgress(HttpClient httpClient, DirectoryInfo cacheDirectory, Uri archiveUrl, IProgress<ICopyProgress>? progress)
+        public HttpStreamProgress(HttpClient httpClient, DirectoryInfo cacheDirectory, Uri archiveUrl, IProgress<ITransferProgress>? progress)
         {
             _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
             _cacheDirectory = cacheDirectory ?? throw new ArgumentNullException(nameof(cacheDirectory));
@@ -40,7 +39,7 @@ namespace MongoDownloader
             httpStream.RangeDownloaded += (_, args) =>
             {
                 _bytesTransferred += args.Length;
-                _progress?.Report(new CopyProgress(_stopwatch.Elapsed, 0, _bytesTransferred, contentLength));
+                _progress?.Report(new TransferProgress(_stopwatch.Elapsed, _bytesTransferred, contentLength));
             };
             _stopwatch.Start();
             return httpStream;
@@ -48,7 +47,7 @@ namespace MongoDownloader
 
         public void Dispose()
         {
-            _progress?.Report(new CopyProgress(_stopwatch.Elapsed, 0, _bytesTransferred, _bytesTransferred));
+            _progress?.Report(new TransferProgress(_stopwatch.Elapsed, _bytesTransferred, _bytesTransferred));
         }
     }
 }

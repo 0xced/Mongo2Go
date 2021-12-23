@@ -2,12 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using ByteSizeLib;
-using HttpProgress;
 using Spectre.Console;
 
 namespace MongoDownloader.CLI
 {
-    public class ArchiveProgress : IProgress<ICopyProgress>
+    public class ArchiveProgress : IProgress<ITransferProgress>
     {
         private readonly ProgressTask _archiveProgress;
         private readonly ProgressTask _globalProgress;
@@ -24,16 +23,16 @@ namespace MongoDownloader.CLI
             _completedDescription = completedDescription ?? throw new ArgumentNullException(nameof(completedDescription));
         }
 
-        public void Report(ICopyProgress progress)
+        public void Report(ITransferProgress progress)
         {
-            _archiveProgress.Value = progress.BytesTransferred;
-            _archiveProgress.MaxValue = progress.ExpectedBytes;
+            _archiveProgress.Value = progress.TransferredBytes;
+            _archiveProgress.MaxValue = progress.TotalBytes;
 
             string text;
             bool isIndeterminate;
-            if (progress.BytesTransferred < progress.ExpectedBytes)
+            if (progress.TransferredBytes < progress.TotalBytes)
             {
-                var speed = ByteSize.FromBytes(progress.BytesTransferred / progress.TransferTime.TotalSeconds);
+                var speed = ByteSize.FromBytes(progress.TransferredBytes / progress.ElapsedTime.TotalSeconds);
                 text = $"Downloading {_archive} from {_archive.Url} at {speed:0.0}/s";
                 isIndeterminate = false;
             }
@@ -43,7 +42,7 @@ namespace MongoDownloader.CLI
                 isIndeterminate = true;
                 // Cheat by subtracting 1 so that the progress stays at 99% in indeterminate mode for
                 // remaining tasks (stripping) to complete with an indeterminate progress bar
-                _archiveProgress.Value = progress.BytesTransferred - 1;
+                _archiveProgress.Value = progress.TransferredBytes - 1;
             }
             Report(text, isIndeterminate);
 
