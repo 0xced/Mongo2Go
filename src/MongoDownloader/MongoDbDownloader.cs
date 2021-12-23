@@ -35,33 +35,7 @@ namespace MongoDownloader
 
         public async Task<IReadOnlyCollection<FileInfo>> ProcessArchiveAsync(IArchive archive, DirectoryInfo extractDirectory, IProgress<ICopyProgress>? progress, CancellationToken cancellationToken)
         {
-            IReadOnlyCollection<FileInfo> binaryFiles;
-            var archiveExtension = Path.GetExtension(archive.Url.AbsolutePath);
-            if (archiveExtension == ".zip")
-            {
-                binaryFiles = await _extractor.DownloadExtractZipArchiveAsync(archive, extractDirectory, progress, cancellationToken);
-            }
-            else
-            {
-                var archiveFile = await DownloadArchiveAsync(archive, progress, cancellationToken);
-                binaryFiles = _extractor.ExtractArchive(archive, archiveFile, extractDirectory, cancellationToken);
-            }
-            return binaryFiles;
-        }
-
-        private async Task<FileInfo> DownloadArchiveAsync(IArchive archive, IProgress<ICopyProgress>? progress, CancellationToken cancellationToken)
-        {
-            _options.CacheDirectory.Create();
-            var destinationFile = new FileInfo(Path.Combine(_options.CacheDirectory.FullName, archive.Url.Segments.Last()));
-            var useCache = bool.TryParse(Environment.GetEnvironmentVariable("MONGO2GO_DOWNLOADER_USE_CACHED_FILE") ?? "", out var useCachedFile) && useCachedFile;
-            if (useCache && destinationFile.Exists)
-            {
-                progress?.Report(new CopyProgress(TimeSpan.Zero, 0, 1, 1));
-                return destinationFile;
-            }
-            using var destinationStream = destinationFile.OpenWrite();
-            await _options.HttpClient.GetAsync(archive.Url.AbsoluteUri, destinationStream, progress, cancellationToken);
-            return destinationFile;
+            return await _extractor.DownloadExtractArchiveAsync(archive, extractDirectory, progress, cancellationToken);
         }
 
         private async Task<Version> GetVersionAsync(Product product, CancellationToken cancellationToken)
