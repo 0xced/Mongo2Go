@@ -61,12 +61,10 @@ namespace MongoDownloader
                 _ => throw new ArgumentOutOfRangeException(nameof(product), product, $"The value of argument '{nameof(product)}' ({product}) is invalid for enum type '{nameof(Product)}'.")
             };
 
-            var platform = target.Platform;
-            var platformName = _options.GetPlatformName(platform);
-            var edition = product == Product.CommunityServer ? _options.GetEdition(platform) : null;
+            var platformName = _options.GetPlatformName(target.Platform);
+            var edition = product == Product.CommunityServer ? _options.GetEdition(target.Platform) : null;
 
-            var architecture = target.Architecture;
-            var architectureRegex = _options.GetArchitecturesRegex(architecture);
+            var architectureRegex = _options.GetArchitecturesRegex(target.Architecture);
             var matchingDownloads = version.Downloads
                 .Where(e => platformName == getPlatformName(e))
                 .Where(e => architectureRegex.IsMatch(e.Arch))
@@ -77,7 +75,7 @@ namespace MongoDownloader
             {
                 var downloads = version.Downloads.OrderBy(e => getPlatformName(e)).ThenBy(e => e.Arch);
                 var messages = Enumerable.Empty<string>()
-                    .Append($"Download not found for {product} {platform}/{architecture}.")
+                    .Append($"Download not found for {product} {target}.")
                     .Append($"  Available downloads for version {version.Number}:")
                     .Concat(downloads.Select(e => $"    - {getPlatformName(e)}/{e.Arch} ({e.Edition})"));
                 throw new InvalidOperationException(string.Join(Environment.NewLine, messages));
@@ -85,10 +83,10 @@ namespace MongoDownloader
 
             if (matchingDownloads.Count > 1)
             {
-                throw new InvalidOperationException($"Found {matchingDownloads.Count} downloads for {platform}/{architecture} but expected to find only one.");
+                throw new InvalidOperationException($"Found {matchingDownloads.Count} downloads for {product} {target} but expected to find only one.");
             }
 
-            return new ArchiveInformation(product, platform, architecture, matchingDownloads[0].Archive.Url, version.Number);
+            return new ArchiveInformation(product, target, matchingDownloads[0].Archive.Url, version.Number);
         }
     }
 }

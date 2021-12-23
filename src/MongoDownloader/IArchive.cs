@@ -1,5 +1,4 @@
 using System;
-using System.Runtime.InteropServices;
 
 namespace MongoDownloader
 {
@@ -14,14 +13,9 @@ namespace MongoDownloader
         Product Product { get; }
 
         /// <summary>
-        /// The <see cref="OSPlatform"/> on which the MongoDB product can run.
+        /// The <see cref="Target"/> on which the MongoDB product can run.
         /// </summary>
-        OSPlatform Platform { get; }
-
-        /// <summary>
-        /// The <see cref="System.Runtime.InteropServices.Architecture"/> on which the MongoDB product can run.
-        /// </summary>
-        Architecture Architecture { get; }
+        Target Target { get; }
 
         /// <summary>
         /// The URL where to download the archive.

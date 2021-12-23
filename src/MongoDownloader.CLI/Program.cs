@@ -86,7 +86,9 @@ namespace MongoDownloader.CLI
             foreach (var archive in communityServerArchives.Concat(databaseToolsArchives))
             {
                 var archiveProgress = context.AddTask($"Downloading {archive} from {archive.Url}", maxValue: initialMaxValue);
-                var directoryName = $"mongodb-{archive.Platform.ToString().ToLowerInvariant()}-{archive.Architecture.ToString().ToLowerInvariant()}-{communityServerVersion}-database-tools-{databaseToolsVersion}";
+                var platform = archive.Target.Platform.ToString().ToLowerInvariant();
+                var architecture = archive.Target.Architecture.ToString().ToLowerInvariant();
+                var directoryName = $"mongodb-{platform}-{architecture}-{communityServerVersion}-database-tools-{databaseToolsVersion}";
                 var extractDirectory = new DirectoryInfo(Path.Combine(toolsDirectory.FullName, directoryName));
                 allArchiveProgresses.Add(archiveProgress);
                 var progress = new ArchiveProgress(archiveProgress, globalProgress, allArchiveProgresses, archive, $"✅ Downloaded and extracted MongoDB Community Server {communityServerVersion} and Database Tools {databaseToolsVersion} into {new Uri(toolsDirectory.FullName).AbsoluteUri}");

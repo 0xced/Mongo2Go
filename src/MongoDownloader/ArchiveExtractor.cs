@@ -39,7 +39,7 @@ namespace MongoDownloader
                 using var httpStream = await httpStreamProgress.GetHttpStreamAsync(cancellationToken);
                 using var zipFile = new ZipFile(httpStream);
 
-                var binaryRegex = _options.GetBinariesRegex(archive.Product, archive.Platform);
+                var binaryRegex = _options.GetBinariesRegex(archive.Product, archive.Target.Platform);
                 var binaryFiles = new List<FileInfo>();
 
                 foreach (var entry in zipFile.Cast<ZipEntry>().Where(e => e.IsFile))
@@ -73,7 +73,7 @@ namespace MongoDownloader
                 using var gzipStream = new GZipInputStream(httpStream);
                 using var tarStream = new TarInputStream(gzipStream, Encoding.UTF8);
 
-                var binaryRegex = _options.GetBinariesRegex(archive.Product, archive.Platform);
+                var binaryRegex = _options.GetBinariesRegex(archive.Product, archive.Target.Platform);
                 var binaryFiles = new List<FileInfo>();
 
                 TarEntry entry;

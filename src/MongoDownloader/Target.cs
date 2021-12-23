@@ -23,5 +23,7 @@ namespace MongoDownloader
         /// The operating system architecture.
         /// </summary>
         public Architecture Architecture { get; }
+
+        public override string ToString() => $"{Platform.Pretty()}/{Architecture.ToString().ToLowerInvariant()}";
     }
 }
