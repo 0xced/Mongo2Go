@@ -10,10 +10,8 @@ namespace MongoDownloader
         {
             if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
-                if (UnixFileSystemInfo.TryGetFileSystemEntry(fileSystemInfo.FullName, out var unixFileInfo))
-                {
-                    unixFileInfo.FileAccessPermissions = (FileAccessPermissions)permissions;
-                }
+                var unixFileInfo = UnixFileSystemInfo.GetFileSystemEntry(fileSystemInfo.FullName);
+                unixFileInfo.FileAccessPermissions = (FileAccessPermissions)permissions;
             }
         }
     }
