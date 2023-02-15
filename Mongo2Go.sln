@@ -13,6 +13,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{56AB91A3-555C-4D59-BB92-570465DC2CA0}"
 	ProjectSection(SolutionItems) = preProject
 		README.md = README.md
+		global.json = global.json
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MongoDownloader.CLI", "src\MongoDownloader.CLI\MongoDownloader.CLI.csproj", "{51D30D3A-BD0A-4535-B973-1F4B55078E40}"
