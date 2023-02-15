@@ -28,17 +28,5 @@ namespace Mongo2Go.Helper
                 File.Delete(fullFileName);
             }
         }
-
-        public void MakeFileExecutable (string path) 
-        {
-            //when on linux or osx we must set the executeble flag on mongo binarys
-            var p = Process.Start("chmod", $"+x {path}");
-            p.WaitForExit();
-
-            if (p.ExitCode != 0) 
-            {
-                throw new IOException($"Could not set executable bit for {path}");
-            }
-        }
     }
 }

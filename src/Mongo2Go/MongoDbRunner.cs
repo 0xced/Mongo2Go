@@ -2,7 +2,6 @@
 using Mongo2Go.Helper;
 using System;
 using System.IO;
-using System.Runtime.InteropServices;
 
 namespace Mongo2Go
 {
@@ -148,8 +147,6 @@ namespace Mongo2Go
             _mongoBin = mongoBin;
             _port = port;
 
-            MakeMongoBinarysExecutable();
-
             ConnectionString = singleNodeReplSet
                 ? "mongodb://127.0.0.1:{0}/?directConnection=true&replicaSet=singleNodeReplSet&readPreference=primary".Formatted(_port)
                 : "mongodb://127.0.0.1:{0}/".Formatted(_port);
@@ -189,8 +186,6 @@ namespace Mongo2Go
                 dataDirectory = GetTemporaryDataDirectory();
             }
 
-            MakeMongoBinarysExecutable();
-
             ConnectionString = singleNodeReplSet
                 ? "mongodb://127.0.0.1:{0}/?directConnection=true&replicaSet=singleNodeReplSet&readPreference=primary".Formatted(_port)
                 : "mongodb://127.0.0.1:{0}/".Formatted(_port);
@@ -203,18 +198,6 @@ namespace Mongo2Go
 
             State = State.Running;
         }
-
-        private void MakeMongoBinarysExecutable()
-        {
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ||
-                RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-            {
-                _fileSystem.MakeFileExecutable(Path.Combine(_mongoBin.Directory, MongoDbDefaults.MongodExecutable));
-                _fileSystem.MakeFileExecutable(Path.Combine(_mongoBin.Directory, MongoDbDefaults.MongoExportExecutable));
-                _fileSystem.MakeFileExecutable(Path.Combine(_mongoBin.Directory, MongoDbDefaults.MongoImportExecutable));
-            }
-        }
-
 
         private static string GetTemporaryDataDirectory() => Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
     }

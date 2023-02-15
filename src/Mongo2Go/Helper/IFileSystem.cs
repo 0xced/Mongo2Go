@@ -5,6 +5,5 @@ namespace Mongo2Go.Helper
         void CreateFolder(string path);
         void DeleteFolder(string path);
         void DeleteFile(string fullFileName);
-        void MakeFileExecutable (string path );
     }
 }
