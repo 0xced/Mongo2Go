@@ -46,7 +46,7 @@ namespace MongoDownloader
                 _ => throw new ArgumentOutOfRangeException(nameof(product), product, $"The value of argument '{nameof(product)}' ({product}) is invalid for enum type '{nameof(Product)}'.")
             };
             var release = await _options.HttpClient.GetFromJsonAsync<Release>(url, cancellationToken) ?? throw new InvalidOperationException($"Failed to deserialize {nameof(Release)}");
-            var semanticVersions = release.Versions.Select(e => new NuGetVersion(e.Number));
+            var semanticVersions = release.Versions.Where(e => !_options.ProductionReleaseOnly || e.IsProductionRelease).Select(e => new NuGetVersion(e.Number));
             var range = _options.GetVersionRange(product);
             var bestMatch = range.FindBestMatch(semanticVersions) ?? throw new InvalidOperationException($"No {product} version matching {range} was found.");
             return release.Versions.Single(e => e.Number == bestMatch.OriginalVersion);

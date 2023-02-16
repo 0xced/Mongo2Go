@@ -33,6 +33,11 @@ namespace MongoDownloader
         public virtual DirectoryInfo CacheDirectory { get; init; } = new(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.InternetCache), nameof(MongoDownloader)));
 
         /// <summary>
+        /// Whether to consider production releases only.
+        /// </summary>
+        public bool ProductionReleaseOnly { get; init; } = true;
+
+        /// <summary>
         /// The edition of the archive to download.
         /// </summary>
         /// <remarks>Windows and macOS use <c>base</c> and Linux uses <c>targeted</c> for the community edition.</remarks>

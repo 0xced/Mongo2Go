@@ -19,6 +19,13 @@ namespace MongoDownloader
 
     internal class Version
     {
+        /// <summary>
+        /// Whether the version is considered a production release.
+        /// Only available for the Community Server archives.
+        /// </summary>
+        [JsonPropertyName("production_release")]
+        public bool IsProductionRelease { get; init; } = true;
+
         [JsonPropertyName("version")]
         public string Number { get; init; } = "";
 
@@ -29,13 +36,13 @@ namespace MongoDownloader
     internal class Download
     {
         /// <summary>
-        /// Used to identify the platform for the Community Server archives
+        /// Used to identify the platform for the Community Server archives.
         /// </summary>
         [JsonPropertyName("target")]
         public string Target { get; init; } = "";
 
         /// <summary>
-        /// Used to identify the platform for the Database Tools archives
+        /// Used to identify the platform for the Database Tools archives.
         /// </summary>
         [JsonPropertyName("name")]
         public string Name { get; init; } = "";
