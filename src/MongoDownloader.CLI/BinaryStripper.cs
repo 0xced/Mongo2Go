@@ -67,23 +67,29 @@ namespace MongoDownloader.CLI
             string? llvmStripToolPath = null;
             try
             {
+                var cts = new CancellationTokenSource();
                 await Cli.Wrap("brew")
                     // don't validate exit code, if `brew list llvm` fails it's because the llvm formula is not installed
                     .WithValidation(CommandResultValidation.None)
-                    .WithArguments(new[] {"list", "llvm"})
+                    .WithArguments(new[] { "list", "llvm" })
                     .WithStandardOutputPipe(PipeTarget.ToDelegate(line =>
                     {
                         if (llvmStripToolPath == null && line.EndsWith(LlvmStripToolName))
                         {
                             llvmStripToolPath = line;
+                            cts.Cancel();
                         }
                     }))
-                    .ExecuteAsync();
+                    .ExecuteAsync(cts.Token);
             }
             catch (Win32Exception exception) when (exception.NativeErrorCode == 2)
             {
                 // brew is not installed
                 return null;
+            }
+            catch (OperationCanceledException)
+            {
+                // the llvm-strip command was found and the brew list llvm command was aborted
             }
 
             return llvmStripToolPath;
