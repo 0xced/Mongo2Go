@@ -22,6 +22,7 @@ namespace MongoDownloader
 
         public async Task<IReadOnlyCollection<FileInfo>> DownloadExtractArchiveAsync(IArchive archive, DirectoryInfo extractDirectory, IProgress<ITransferProgress>? progress, CancellationToken cancellationToken)
         {
+            _options.CacheDirectory.Create();
             var fileName = Path.GetFileName(archive.Url.AbsolutePath);
             var archiveExtension = Path.GetExtension(fileName);
             return archiveExtension switch
