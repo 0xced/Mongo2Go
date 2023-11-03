@@ -13,9 +13,9 @@ namespace MongoDownloader
 {
     internal class ArchiveExtractor
     {
-        private readonly Options _options;
+        private readonly IExtractOptions _options;
 
-        public ArchiveExtractor(Options options)
+        public ArchiveExtractor(IExtractOptions options)
         {
             _options = options ?? throw new ArgumentNullException(nameof(options));
         }

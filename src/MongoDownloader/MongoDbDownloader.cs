@@ -12,9 +12,9 @@ namespace MongoDownloader
     internal class MongoDbDownloader : IMongoDbDownloader
     {
         private readonly ArchiveExtractor _extractor;
-        private readonly Options _options;
+        private readonly IDownloadOptions _options;
 
-        public MongoDbDownloader(ArchiveExtractor extractor, Options options)
+        public MongoDbDownloader(ArchiveExtractor extractor, IDownloadOptions options)
         {
             _extractor = extractor ?? throw new ArgumentNullException(nameof(extractor));
             _options = options ?? throw new ArgumentNullException(nameof(options));
