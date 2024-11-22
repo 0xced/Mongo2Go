@@ -33,7 +33,7 @@ namespace MongoDownloader.CLI
                 var performStrip = args.All(e => e != "--no-strip");
                 var binaryStripper = performStrip ? await GetBinaryStripperAsync(cancellationTokenSource.Token) : null;
                 var downloader = MongoDbDownloaderFactory.Create(new Options());
-                var strippedSize = await AnsiConsole
+                var downloadBytesSaved = await AnsiConsole
                     .Progress()
                     .Columns(
                         new ProgressBarColumn(),
@@ -44,10 +44,7 @@ namespace MongoDownloader.CLI
                     )
                     .StartAsync(async context => await RunAsync(context, downloader, binaryStripper, toolsDirectory, cancellationTokenSource.Token));
 
-                if (performStrip)
-                {
-                    AnsiConsole.WriteLine($"Saved {strippedSize:#.#} by stripping executables");
-                }
+                AnsiConsole.WriteLine($"Saved {downloadBytesSaved:#.#} of download");
                 return 0;
             }
             catch (Exception exception)
@@ -95,13 +92,14 @@ namespace MongoDownloader.CLI
                 var processArchiveTask = downloader.ProcessArchiveAsync(archive, extractDirectory, progress, cancellationToken);
                 tasks.Add(processArchiveTask.Combine(StripAsync, binaryStripper, progress, cancellationToken));
             }
-            var strippedSizes = await Task.WhenAll(tasks);
-            return strippedSizes.Sum();
+            var downloadBytesSaved = await Task.WhenAll(tasks);
+            return downloadBytesSaved.Sum();
         }
 
-        private static async Task<ByteSize> StripAsync(IReadOnlyCollection<FileInfo> binaryFiles, BinaryStripper? binaryStripper, ArchiveProgress progress, CancellationToken cancellationToken)
+        private static async Task<ByteSize> StripAsync(UnarchiveResult unarchiveResult, BinaryStripper? binaryStripper, ArchiveProgress progress, CancellationToken cancellationToken)
         {
             ByteSize strippedSize;
+            var binaryFiles = unarchiveResult.ExtractedFiles;
             if (binaryStripper is not null && binaryFiles.Count > 0)
             {
                 progress.Report("Stripping binaries");
@@ -114,7 +112,7 @@ namespace MongoDownloader.CLI
                 strippedSize = new ByteSize(0);
             }
             progress.ReportCompleted(strippedSize);
-            return strippedSize;
+            return ByteSize.FromBytes(unarchiveResult.DownloadBytesSaved);
         }
 
         private static DirectoryInfo GetToolsDirectory()

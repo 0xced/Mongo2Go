@@ -20,7 +20,7 @@ namespace MongoDownloader
             _options = options ?? throw new ArgumentNullException(nameof(options));
         }
 
-        public async Task<IReadOnlyCollection<FileInfo>> DownloadExtractArchiveAsync(IArchive archive, DirectoryInfo extractDirectory, IProgress<ITransferProgress>? progress, CancellationToken cancellationToken)
+        public async Task<UnarchiveResult> DownloadExtractArchiveAsync(IArchive archive, DirectoryInfo extractDirectory, IProgress<ITransferProgress>? progress, CancellationToken cancellationToken)
         {
             _options.CacheDirectory.Create();
             var fileName = Path.GetFileName(archive.Url.AbsolutePath);
@@ -33,7 +33,7 @@ namespace MongoDownloader
             };
         }
 
-        private async Task<IReadOnlyCollection<FileInfo>> DownloadExtractZipArchiveAsync(IArchive archive, DirectoryInfo extractDirectory, IProgress<ITransferProgress>? progress, CancellationToken cancellationToken)
+        private async Task<UnarchiveResult> DownloadExtractZipArchiveAsync(IArchive archive, DirectoryInfo extractDirectory, IProgress<ITransferProgress>? progress, CancellationToken cancellationToken)
         {
             using (var httpStreamProgress = new HttpStreamProgress(_options.HttpClient, _options.CacheDirectory, archive.Url, progress))
             {
@@ -61,11 +61,11 @@ namespace MongoDownloader
                         binaryFiles.Add(destinationFile);
                     }
                 }
-                return binaryFiles;
+                return new UnarchiveResult(binaryFiles, httpStreamProgress.BytesSaved);
             }
         }
 
-        private async Task<IReadOnlyCollection<FileInfo>> DownloadExtractTarGzipArchiveAsync(IArchive archive, DirectoryInfo extractDirectory, IProgress<ITransferProgress>? progress, CancellationToken cancellationToken)
+        private async Task<UnarchiveResult> DownloadExtractTarGzipArchiveAsync(IArchive archive, DirectoryInfo extractDirectory, IProgress<ITransferProgress>? progress, CancellationToken cancellationToken)
         {
             // See https://github.com/icsharpcode/SharpZipLib/wiki/GZip-and-Tar-Samples#-extract-from-a-tar-with-full-control
             using (var httpStreamProgress = new HttpStreamProgress(_options.HttpClient, _options.CacheDirectory, archive.Url, progress))
@@ -96,7 +96,7 @@ namespace MongoDownloader
                         binaryFiles.Add(destinationFile);
                     }
                 }
-                return binaryFiles;
+                return new UnarchiveResult(binaryFiles, httpStreamProgress.BytesSaved);
             }
         }
     }

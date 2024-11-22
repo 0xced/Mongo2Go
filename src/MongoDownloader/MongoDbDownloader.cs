@@ -32,7 +32,7 @@ namespace MongoDownloader
             return targets.Select(target => GetArchive(product, target, version)).ToList();
         }
 
-        public async Task<IReadOnlyCollection<FileInfo>> ProcessArchiveAsync(IArchive archive, DirectoryInfo extractDirectory, IProgress<ITransferProgress>? progress, CancellationToken cancellationToken)
+        public async Task<UnarchiveResult> ProcessArchiveAsync(IArchive archive, DirectoryInfo extractDirectory, IProgress<ITransferProgress>? progress, CancellationToken cancellationToken)
         {
             return await _extractor.DownloadExtractArchiveAsync(archive, extractDirectory, progress, cancellationToken);
         }
