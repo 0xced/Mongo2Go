@@ -63,6 +63,7 @@ namespace MongoDownloader.CLI
             {
                 new(OSPlatform.Linux, Architecture.Arm64),
                 new(OSPlatform.Linux, Architecture.X64),
+                new(OSPlatform.OSX, Architecture.Arm64),
                 new(OSPlatform.OSX, Architecture.X64),
                 new(OSPlatform.Windows, Architecture.X64),
             };
