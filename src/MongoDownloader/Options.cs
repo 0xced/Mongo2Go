@@ -74,7 +74,8 @@ namespace MongoDownloader
         /// <inheritdoc />
         public virtual VersionRange GetVersionRange(Product product)
         {
-            return new(VersionRange.AllStable, new FloatRange(NuGetVersionFloatBehavior.Major));
+            // Equivalent to VersionRange.AllStableFloating but without the obsolete warning. We don't care about round tripping in an assets file, we just want the latest stable version by default.
+            return new VersionRange(minVersion: new NuGetVersion(0, 0, 0), includeMaxVersion: true, floatRange: new FloatRange(NuGetVersionFloatBehavior.Major));
         }
     }
 }
