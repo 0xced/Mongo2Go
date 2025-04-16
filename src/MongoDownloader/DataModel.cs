@@ -11,13 +11,13 @@ namespace MongoDownloader;
 /// <summary>
 /// The root object of the JSON describing the available releases.
 /// </summary>
-internal class Release
+internal class ReleaseModel
 {
     [JsonPropertyName("versions")]
-    public IReadOnlyCollection<Version> Versions { get; init; } = new List<Version>();
+    public IReadOnlyCollection<VersionModel> Versions { get; init; } = [];
 }
 
-internal class Version
+internal class VersionModel
 {
     /// <summary>
     /// Whether the version is considered a production release.
@@ -30,10 +30,10 @@ internal class Version
     public string Number { get; init; } = "";
 
     [JsonPropertyName("downloads")]
-    public IReadOnlyCollection<Download> Downloads { get; init; } = new List<Download>();
+    public IReadOnlyCollection<DownloadModel> Downloads { get; init; } = [];
 }
 
-internal class Download
+internal class DownloadModel
 {
     /// <summary>
     /// Used to identify the platform for the Community Server archives.
@@ -54,10 +54,10 @@ internal class Download
     public string Edition { get; init; } = "";
 
     [JsonPropertyName("archive")]
-    public Archive Archive { get; init; } = new();
+    public ArchiveModel Archive { get; init; } = new();
 }
 
-internal class Archive
+internal class ArchiveModel
 {
     [JsonPropertyName("url")]
     public Uri? Url { get; init; } = null;

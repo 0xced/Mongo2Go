@@ -9,35 +9,56 @@ using NuGet.Versioning;
 
 namespace MongoDownloader;
 
-internal class MongoDbDownloader : IMongoDbDownloader
+public class MongoDbDownloader
 {
-    private readonly ArchiveExtractor _extractor;
-    private readonly IDownloadOptions _options;
+    private readonly Options _options;
 
-    public MongoDbDownloader(ArchiveExtractor extractor, IDownloadOptions options)
+    public MongoDbDownloader(Options options)
     {
-        _extractor = extractor ?? throw new ArgumentNullException(nameof(extractor));
         _options = options ?? throw new ArgumentNullException(nameof(options));
     }
 
-    public async Task<IArchive> GetArchiveAsync(Product product, Target target, CancellationToken cancellationToken)
+    /// <summary>
+    /// Gets an <see cref="Archive"/> for the specified <paramref name="product"/> and <paramref name="target"/>.
+    /// </summary>
+    /// <param name="product">The MongoDB <see cref="Product"/></param>
+    /// <param name="target">The <see cref="Target"/> where the MongoDB product can run.</param>
+    /// <param name="cancellationToken">A <see cref="CancellationToken"/> that can be used to cancel the operation.</param>
+    /// <returns>An <see cref="Archive"/> that can be passed to <see cref="ProcessArchiveAsync"/>.</returns>
+    public async Task<Archive> GetArchiveAsync(Product product, Target target, CancellationToken cancellationToken)
     {
         var version = await GetVersionAsync(product, cancellationToken);
         return GetArchive(product, target, version);
     }
 
-    public async Task<IReadOnlyCollection<IArchive>> GetArchivesAsync(Product product, IEnumerable<Target> targets, CancellationToken cancellationToken)
+    /// <summary>
+    /// Gets a collection <see cref="Archive"/> for the specified <paramref name="product"/> and <paramref name="targets"/>.
+    /// </summary>
+    /// <param name="product">The MongoDB <see cref="Product"/></param>
+    /// <param name="targets">A collection of <see cref="Target"/>s where the MongoDB product can run.</param>
+    /// <param name="cancellationToken">A <see cref="CancellationToken"/> that can be used to cancel the operation.</param>
+    /// <returns>A collection of <see cref="Archive"/> that can be passed to <see cref="ProcessArchiveAsync"/>.</returns>
+    public async Task<IReadOnlyCollection<Archive>> GetArchivesAsync(Product product, IEnumerable<Target> targets, CancellationToken cancellationToken)
     {
         var version = await GetVersionAsync(product, cancellationToken);
         return targets.Select(target => GetArchive(product, target, version)).ToList();
     }
 
-    public async Task<UnarchiveResult> ProcessArchiveAsync(IArchive archive, DirectoryInfo extractDirectory, IProgress<ITransferProgress>? progress, CancellationToken cancellationToken)
+    /// <summary>
+    /// Downloads, then extracts the <paramref name="archive"/> into the specified <paramref name="extractDirectory"/>.
+    /// </summary>
+    /// <param name="archive">The <see cref="Archive"/> to download and extract.</param>
+    /// <param name="extractDirectory">The directory where to extract the archive binary files.</param>
+    /// <param name="progress">An optional <seealso cref="IProgress{T}"/> that can be used to track the download progress.</param>
+    /// <param name="cancellationToken">A <see cref="CancellationToken"/> that can be used to cancel the operation.</param>
+    /// <returns>The <see cref="UnarchiveResult"/> object holding the extracted files from the archive and the bytes saved.</returns>
+    public async Task<UnarchiveResult> ProcessArchiveAsync(Archive archive, DirectoryInfo extractDirectory, IProgress<TransferProgress>? progress, CancellationToken cancellationToken)
     {
-        return await _extractor.DownloadExtractArchiveAsync(archive, extractDirectory, progress, cancellationToken);
+        var extractor = new ArchiveExtractor(_options);
+        return await extractor.DownloadExtractArchiveAsync(archive, extractDirectory, progress, cancellationToken);
     }
 
-    private async Task<Version> GetVersionAsync(Product product, CancellationToken cancellationToken)
+    private async Task<VersionModel> GetVersionAsync(Product product, CancellationToken cancellationToken)
     {
         var url = product switch
         {
@@ -45,16 +66,16 @@ internal class MongoDbDownloader : IMongoDbDownloader
             Product.DatabaseTools => _options.DatabaseToolsUrl,
             _ => throw new ArgumentOutOfRangeException(nameof(product), product, $"The value of argument '{nameof(product)}' ({product}) is invalid for enum type '{nameof(Product)}'.")
         };
-        var release = await _options.HttpClient.GetFromJsonAsync<Release>(url, cancellationToken) ?? throw new InvalidOperationException($"Failed to deserialize {nameof(Release)}");
+        var release = await _options.HttpClient.GetFromJsonAsync<ReleaseModel>(url, cancellationToken) ?? throw new InvalidOperationException($"Failed to deserialize {nameof(ReleaseModel)}");
         var semanticVersions = release.Versions.Where(e => !_options.ProductionReleaseOnly || e.IsProductionRelease).Select(e => new NuGetVersion(e.Number));
         var range = _options.GetVersionRange(product);
         var bestMatch = range.FindBestMatch(semanticVersions) ?? throw new InvalidOperationException($"No {product} version matching {range} was found.");
         return release.Versions.Single(e => e.Number == bestMatch.OriginalVersion);
     }
 
-    private IArchive GetArchive(Product product, Target target, Version version)
+    private Archive GetArchive(Product product, Target target, VersionModel version)
     {
-        Func<Download, string> getPlatformName = product switch
+        Func<DownloadModel, string> getPlatformName = product switch
         {
             Product.CommunityServer => download => download.Target,
             Product.DatabaseTools => download => download.Name,
@@ -93,6 +114,12 @@ internal class MongoDbDownloader : IMongoDbDownloader
             throw new InvalidOperationException($"The archive URL for {product} {version.Number} ({download.Arch}) is missing.");
         }
 
-        return new ArchiveInformation(product, target, archiveUrl, version.Number);
+        return new Archive
+        {
+            Product = product,
+            Target = target,
+            Url = archiveUrl,
+            Version = version.Number,
+        };
     }
 }

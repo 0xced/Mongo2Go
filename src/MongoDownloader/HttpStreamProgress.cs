@@ -16,12 +16,12 @@ internal class HttpStreamProgress : IDisposable
     private readonly HttpClient _httpClient;
     private readonly DirectoryInfo _cacheDirectory;
     private readonly Uri _archiveUrl;
-    private readonly IProgress<ITransferProgress>? _progress;
+    private readonly IProgress<TransferProgress>? _progress;
     private readonly Stopwatch _stopwatch;
     private long _bytesTransferred;
     private long _contentLength;
 
-    public HttpStreamProgress(HttpClient httpClient, DirectoryInfo cacheDirectory, Uri archiveUrl, IProgress<ITransferProgress>? progress)
+    public HttpStreamProgress(HttpClient httpClient, DirectoryInfo cacheDirectory, Uri archiveUrl, IProgress<TransferProgress>? progress)
     {
         _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
         _cacheDirectory = cacheDirectory ?? throw new ArgumentNullException(nameof(cacheDirectory));
@@ -40,7 +40,7 @@ internal class HttpStreamProgress : IDisposable
         httpStream.RangeDownloaded += (_, args) =>
         {
             _bytesTransferred += args.Length;
-            _progress?.Report(new TransferProgress(_stopwatch.Elapsed, _bytesTransferred, _contentLength));
+            _progress?.Report(new TransferProgress { ElapsedTime = _stopwatch.Elapsed, TransferredBytes = _bytesTransferred, TotalBytes = _contentLength });
         };
         _stopwatch.Start();
         return httpStream;
@@ -50,6 +50,6 @@ internal class HttpStreamProgress : IDisposable
 
     public void Dispose()
     {
-        _progress?.Report(new TransferProgress(_stopwatch.Elapsed, _bytesTransferred, _bytesTransferred));
+        _progress?.Report(new TransferProgress { ElapsedTime = _stopwatch.Elapsed, TransferredBytes = _bytesTransferred, TotalBytes = _bytesTransferred });
     }
 }

@@ -13,14 +13,14 @@ namespace MongoDownloader;
 
 internal class ArchiveExtractor
 {
-    private readonly IExtractOptions _options;
+    private readonly Options _options;
 
-    public ArchiveExtractor(IExtractOptions options)
+    public ArchiveExtractor(Options options)
     {
         _options = options ?? throw new ArgumentNullException(nameof(options));
     }
 
-    public async Task<UnarchiveResult> DownloadExtractArchiveAsync(IArchive archive, DirectoryInfo extractDirectory, IProgress<ITransferProgress>? progress, CancellationToken cancellationToken)
+    public async Task<UnarchiveResult> DownloadExtractArchiveAsync(Archive archive, DirectoryInfo extractDirectory, IProgress<TransferProgress>? progress, CancellationToken cancellationToken)
     {
         _options.CacheDirectory.Create();
         var fileName = Path.GetFileName(archive.Url.AbsolutePath);
@@ -33,7 +33,7 @@ internal class ArchiveExtractor
         };
     }
 
-    private async Task<UnarchiveResult> DownloadExtractZipArchiveAsync(IArchive archive, DirectoryInfo extractDirectory, IProgress<ITransferProgress>? progress, CancellationToken cancellationToken)
+    private async Task<UnarchiveResult> DownloadExtractZipArchiveAsync(Archive archive, DirectoryInfo extractDirectory, IProgress<TransferProgress>? progress, CancellationToken cancellationToken)
     {
         using (var httpStreamProgress = new HttpStreamProgress(_options.HttpClient, _options.CacheDirectory, archive.Url, progress))
         {
@@ -65,7 +65,7 @@ internal class ArchiveExtractor
         }
     }
 
-    private async Task<UnarchiveResult> DownloadExtractTarGzipArchiveAsync(IArchive archive, DirectoryInfo extractDirectory, IProgress<ITransferProgress>? progress, CancellationToken cancellationToken)
+    private async Task<UnarchiveResult> DownloadExtractTarGzipArchiveAsync(Archive archive, DirectoryInfo extractDirectory, IProgress<TransferProgress>? progress, CancellationToken cancellationToken)
     {
         // See https://github.com/icsharpcode/SharpZipLib/wiki/GZip-and-Tar-Samples#-extract-from-a-tar-with-full-control
         using (var httpStreamProgress = new HttpStreamProgress(_options.HttpClient, _options.CacheDirectory, archive.Url, progress))

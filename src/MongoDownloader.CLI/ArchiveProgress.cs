@@ -6,15 +6,15 @@ using Spectre.Console;
 
 namespace MongoDownloader.CLI;
 
-public class ArchiveProgress : IProgress<ITransferProgress>
+public class ArchiveProgress : IProgress<TransferProgress>
 {
     private readonly ProgressTask _archiveProgress;
     private readonly ProgressTask _globalProgress;
     private readonly IEnumerable<ProgressTask> _allArchiveProgresses;
-    private readonly IArchive _archive;
+    private readonly Archive _archive;
     private readonly string _completedDescription;
 
-    public ArchiveProgress(ProgressTask archiveProgress, ProgressTask globalProgress, IEnumerable<ProgressTask> allArchiveProgresses, IArchive archive, string completedDescription)
+    public ArchiveProgress(ProgressTask archiveProgress, ProgressTask globalProgress, IEnumerable<ProgressTask> allArchiveProgresses, Archive archive, string completedDescription)
     {
         _archiveProgress = archiveProgress ?? throw new ArgumentNullException(nameof(archiveProgress));
         _globalProgress = globalProgress ?? throw new ArgumentNullException(nameof(globalProgress));
@@ -23,7 +23,7 @@ public class ArchiveProgress : IProgress<ITransferProgress>
         _completedDescription = completedDescription ?? throw new ArgumentNullException(nameof(completedDescription));
     }
 
-    public void Report(ITransferProgress progress)
+    public void Report(TransferProgress progress)
     {
         _archiveProgress.Value = progress.TransferredBytes;
         _archiveProgress.MaxValue = progress.TotalBytes;

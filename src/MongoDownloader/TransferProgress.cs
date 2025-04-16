@@ -2,16 +2,20 @@ using System;
 
 namespace MongoDownloader;
 
-internal class TransferProgress : ITransferProgress
+public class TransferProgress
 {
-    public TransferProgress(TimeSpan elapsedTime, long transferredBytes, long totalBytes)
-    {
-        ElapsedTime = elapsedTime;
-        TransferredBytes = transferredBytes;
-        TotalBytes = totalBytes;
-    }
+    /// <summary>
+    /// The elapsed time since the download was initiated.
+    /// </summary>
+    public required TimeSpan ElapsedTime { get; init; }
 
-    public TimeSpan ElapsedTime { get; }
-    public long TransferredBytes { get; }
-    public long TotalBytes { get; }
+    /// <summary>
+    /// The current number of bytes transferred.
+    /// </summary>
+    public required long TransferredBytes { get; init; }
+
+    /// <summary>
+    /// The total number of bytes for the download.
+    /// </summary>
+    public required long TotalBytes { get; init; }
 }

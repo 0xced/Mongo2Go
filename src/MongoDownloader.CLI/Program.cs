@@ -32,7 +32,7 @@ internal static class Program
             };
             var performStrip = args.All(e => e != "--no-strip");
             var binaryStripper = performStrip ? await GetBinaryStripperAsync(cancellationTokenSource.Token) : null;
-            var downloader = MongoDbDownloaderFactory.Create(new Options());
+            var downloader = new MongoDbDownloader(new Options());
             var downloadBytesSaved = await AnsiConsole
                 .Progress()
                 .Columns(
@@ -57,7 +57,7 @@ internal static class Program
         }
     }
 
-    private static async Task<ByteSize> RunAsync(ProgressContext context, IMongoDbDownloader downloader, BinaryStripper? binaryStripper, DirectoryInfo toolsDirectory, CancellationToken cancellationToken)
+    private static async Task<ByteSize> RunAsync(ProgressContext context, MongoDbDownloader downloader, BinaryStripper? binaryStripper, DirectoryInfo toolsDirectory, CancellationToken cancellationToken)
     {
         var targets = new Target[]
         {
