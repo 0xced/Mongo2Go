@@ -86,6 +86,13 @@ internal class MongoDbDownloader : IMongoDbDownloader
             throw new InvalidOperationException($"Found {matchingDownloads.Count} downloads for {product} {target} but expected to find only one.");
         }
 
-        return new ArchiveInformation(product, target, matchingDownloads[0].Archive.Url, version.Number);
+        var download = matchingDownloads[0];
+        var archiveUrl = download.Archive.Url;
+        if (archiveUrl == null)
+        {
+            throw new InvalidOperationException($"The archive URL for {product} {version.Number} ({download.Arch}) is missing.");
+        }
+
+        return new ArchiveInformation(product, target, archiveUrl, version.Number);
     }
 }

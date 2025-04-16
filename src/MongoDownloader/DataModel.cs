@@ -60,5 +60,5 @@ internal class Download
 internal class Archive
 {
     [JsonPropertyName("url")]
-    public Uri Url { get; init; } = default!;
+    public Uri? Url { get; init; } = null;
 }
