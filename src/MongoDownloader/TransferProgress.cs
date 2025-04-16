@@ -15,7 +15,7 @@ public class TransferProgress
     public required long TransferredBytes { get; init; }
 
     /// <summary>
-    /// The total number of bytes for the download.
+    /// The total number of bytes for the download or <see langword="null"/> if unknown (because the HTTP Content-Length header was missing).
     /// </summary>
-    public required long TotalBytes { get; init; }
+    public required long? TotalBytes { get; init; }
 }

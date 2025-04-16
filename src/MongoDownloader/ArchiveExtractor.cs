@@ -11,14 +11,9 @@ using ICSharpCode.SharpZipLib.Zip;
 
 namespace MongoDownloader;
 
-internal class ArchiveExtractor
+internal class ArchiveExtractor(Options options)
 {
-    private readonly Options _options;
-
-    public ArchiveExtractor(Options options)
-    {
-        _options = options ?? throw new ArgumentNullException(nameof(options));
-    }
+    private readonly Options _options = options ?? throw new ArgumentNullException(nameof(options));
 
     public async Task<UnarchiveResult> DownloadExtractArchiveAsync(Archive archive, DirectoryInfo extractDirectory, IProgress<TransferProgress>? progress, CancellationToken cancellationToken)
     {

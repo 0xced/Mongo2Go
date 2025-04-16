@@ -26,25 +26,22 @@ public class ArchiveProgress : IProgress<TransferProgress>
     public void Report(TransferProgress progress)
     {
         _archiveProgress.Value = progress.TransferredBytes;
-        _archiveProgress.MaxValue = progress.TotalBytes;
+        _archiveProgress.MaxValue = progress.TotalBytes ?? 0;
 
         string text;
-        bool isIndeterminate;
-        if (progress.TransferredBytes < progress.TotalBytes)
+        if (!progress.TotalBytes.HasValue || progress.TransferredBytes < progress.TotalBytes.Value)
         {
             var speed = ByteSize.FromBytes(progress.TransferredBytes / progress.ElapsedTime.TotalSeconds);
             text = $"Downloading {_archive} from {_archive.Url} at {speed:0.0}/s";
-            isIndeterminate = false;
         }
         else
         {
             text = $"Downloaded {_archive}";
-            isIndeterminate = true;
             // Cheat by subtracting 1 so that the progress stays at 99% in indeterminate mode for
             // remaining tasks (stripping) to complete with an indeterminate progress bar
             _archiveProgress.Value = progress.TransferredBytes - 1;
         }
-        Report(text, isIndeterminate);
+        Report(text, isIndeterminate: !progress.TotalBytes.HasValue || progress.TransferredBytes >= progress.TotalBytes.Value);
 
         lock (_globalProgress)
         {

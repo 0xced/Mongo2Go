@@ -113,7 +113,7 @@ internal static class Program
             strippedSize = new ByteSize(0);
         }
         progress.ReportCompleted(strippedSize);
-        return ByteSize.FromBytes(unarchiveResult.DownloadBytesSaved);
+        return ByteSize.FromBytes(unarchiveResult.DownloadBytesSaved ?? 0);
     }
 
     private static DirectoryInfo GetToolsDirectory()

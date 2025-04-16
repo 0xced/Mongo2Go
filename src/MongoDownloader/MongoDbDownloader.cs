@@ -9,14 +9,9 @@ using NuGet.Versioning;
 
 namespace MongoDownloader;
 
-public class MongoDbDownloader
+public class MongoDbDownloader(Options options)
 {
-    private readonly Options _options;
-
-    public MongoDbDownloader(Options options)
-    {
-        _options = options ?? throw new ArgumentNullException(nameof(options));
-    }
+    private readonly Options _options = options ?? throw new ArgumentNullException(nameof(options));
 
     /// <summary>
     /// Gets an <see cref="Archive"/> for the specified <paramref name="product"/> and <paramref name="target"/>.
