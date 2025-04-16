@@ -77,8 +77,7 @@ namespace MongoDownloader
                 var binaryRegex = _options.GetBinariesRegex(archive.Product, archive.Target.Platform);
                 var binaryFiles = new List<FileInfo>();
 
-                TarEntry entry;
-                while ((entry = tarStream.GetNextEntry()) != null)
+                while (await tarStream.GetNextEntryAsync(cancellationToken) is { } entry)
                 {
                     cancellationToken.ThrowIfCancellationRequested();
 
@@ -91,7 +90,7 @@ namespace MongoDownloader
                         var destinationFile = new FileInfo(Path.Combine(extractDirectory.FullName, parts.Last()));
                         destinationFile.Directory?.Create();
                         using var destinationStream = destinationFile.OpenWrite();
-                        tarStream.CopyEntryContents(destinationStream);
+                        await tarStream.CopyEntryContentsAsync(destinationStream, cancellationToken);
                         destinationFile.SetFileAccessPermissions(entry.TarHeader.Mode);
                         binaryFiles.Add(destinationFile);
                     }
