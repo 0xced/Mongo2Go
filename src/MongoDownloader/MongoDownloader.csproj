@@ -9,7 +9,7 @@
   
   <ItemGroup>
     <PackageReference Include="Espresso3389.HttpStream" Version="2.0.68" />
-    <PackageReference Include="Mono.Posix.NETStandard" Version="1.0.0" />
+    <PackageReference Include="Mono.Unix" Version="7.1.0-final.1.21458.1" />
     <PackageReference Include="NuGet.Versioning" Version="6.13.2" />
     <PackageReference Include="PolySharp" Version="1.15.0" PrivateAssets="all" />
     <PackageReference Include="SharpZipLib" Version="1.4.2" />
