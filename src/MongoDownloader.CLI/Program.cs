@@ -44,7 +44,7 @@ namespace MongoDownloader.CLI
                     )
                     .StartAsync(async context => await RunAsync(context, downloader, binaryStripper, toolsDirectory, cancellationTokenSource.Token));
 
-                AnsiConsole.WriteLine($"Saved {downloadBytesSaved:#.#} of download");
+                AnsiConsole.WriteLine($"Saved {downloadBytesSaved.ToString("#.#", provider: null, useBinaryByte: true)} of download");
                 return 0;
             }
             catch (Exception exception)
