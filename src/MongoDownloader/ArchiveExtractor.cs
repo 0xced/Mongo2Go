@@ -40,7 +40,7 @@ internal class ArchiveExtractor(Options options)
             {
                 var destinationFile = new FileInfo(Path.Combine(extractDirectory.FullName, entry.Name));
                 destinationFile.Directory?.Create();
-                entry.ExtractToFile(destinationFile.FullName, overwrite: true);
+                await entry.ExtractToFileAsync(destinationFile.FullName, overwrite: true, cancellationToken);
                 binaryFiles.Add(destinationFile);
             }
 
