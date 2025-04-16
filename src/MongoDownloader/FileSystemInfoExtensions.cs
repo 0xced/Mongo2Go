@@ -2,17 +2,16 @@ using System.IO;
 using System.Runtime.InteropServices;
 using Mono.Unix;
 
-namespace MongoDownloader
+namespace MongoDownloader;
+
+internal static class FileSystemInfoExtensions
 {
-    internal static class FileSystemInfoExtensions
+    public static void SetFileAccessPermissions(this FileSystemInfo fileSystemInfo, int permissions)
     {
-        public static void SetFileAccessPermissions(this FileSystemInfo fileSystemInfo, int permissions)
+        if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
-            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            {
-                var unixFileInfo = UnixFileSystemInfo.GetFileSystemEntry(fileSystemInfo.FullName);
-                unixFileInfo.FileAccessPermissions = (FileAccessPermissions)permissions;
-            }
+            var unixFileInfo = UnixFileSystemInfo.GetFileSystemEntry(fileSystemInfo.FullName);
+            unixFileInfo.FileAccessPermissions = (FileAccessPermissions)permissions;
         }
     }
 }

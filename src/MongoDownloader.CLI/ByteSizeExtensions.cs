@@ -2,13 +2,12 @@ using System.Collections.Generic;
 using System.Linq;
 using ByteSizeLib;
 
-namespace MongoDownloader.CLI
+namespace MongoDownloader.CLI;
+
+internal static class ByteSizeExtensions
 {
-    internal static class ByteSizeExtensions
+    public static ByteSize Sum(this IEnumerable<ByteSize> byteSizes)
     {
-        public static ByteSize Sum(this IEnumerable<ByteSize> byteSizes)
-        {
-            return byteSizes.Aggregate(new ByteSize(0), (current, byteSize) => current + byteSize);
-        }
+        return byteSizes.Aggregate(new ByteSize(0), (current, byteSize) => current + byteSize);
     }
 }

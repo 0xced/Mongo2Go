@@ -1,12 +1,11 @@
 using System.Net.Http;
 
-namespace MongoDownloader
+namespace MongoDownloader;
+
+internal interface IHttpOptions
 {
-    internal interface IHttpOptions
-    {
-        /// <summary>
-        /// The <see cref="HttpClient"/> instance used to fetch data over HTTP.
-        /// </summary>
-        HttpClient HttpClient { get; }
-    }
+    /// <summary>
+    /// The <see cref="HttpClient"/> instance used to fetch data over HTTP.
+    /// </summary>
+    HttpClient HttpClient { get; }
 }

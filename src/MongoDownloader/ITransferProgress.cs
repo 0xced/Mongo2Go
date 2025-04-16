@@ -1,11 +1,10 @@
 using System;
 
-namespace MongoDownloader
+namespace MongoDownloader;
+
+public interface ITransferProgress
 {
-    public interface ITransferProgress
-    {
-        TimeSpan ElapsedTime { get; }
-        long TransferredBytes { get; }
-        long TotalBytes { get; }
-    }
+    TimeSpan ElapsedTime { get; }
+    long TransferredBytes { get; }
+    long TotalBytes { get; }
 }
