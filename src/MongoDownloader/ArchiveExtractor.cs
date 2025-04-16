@@ -1,13 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.Formats.Tar;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using ICSharpCode.SharpZipLib.GZip;
-using ICSharpCode.SharpZipLib.Tar;
 
 namespace MongoDownloader;
 
@@ -52,31 +50,26 @@ internal class ArchiveExtractor(Options options)
 
     private async Task<UnarchiveResult> DownloadExtractTarGzipArchiveAsync(Archive archive, DirectoryInfo extractDirectory, IProgress<TransferProgress>? progress, CancellationToken cancellationToken)
     {
-        // See https://github.com/icsharpcode/SharpZipLib/wiki/GZip-and-Tar-Samples#-extract-from-a-tar-with-full-control
         using (var httpStreamProgress = new HttpStreamProgress(_options.HttpClient, _options.CacheDirectory, archive.Url, progress))
         {
             await using var httpStream = await httpStreamProgress.GetHttpStreamAsync(cancellationToken);
-            await using var gzipStream = new GZipInputStream(httpStream);
-            await using var tarStream = new TarInputStream(gzipStream, Encoding.UTF8);
+            await using var gzipStream = new GZipStream(httpStream, CompressionMode.Decompress);
+            await using var tarReader = new TarReader(gzipStream);
 
             var binaryRegex = _options.GetBinariesRegex(archive.Product, archive.Target.Platform);
             var binaryFiles = new List<FileInfo>();
 
-            while (await tarStream.GetNextEntryAsync(cancellationToken) is { } entry)
+            while (await tarReader.GetNextEntryAsync(cancellationToken: cancellationToken) is { EntryType: TarEntryType.RegularFile or TarEntryType.V7RegularFile or TarEntryType.ContiguousFile } entry)
             {
-                cancellationToken.ThrowIfCancellationRequested();
-
                 var fileName = entry.Name.Replace('\\', Path.DirectorySeparatorChar).Replace('/', Path.DirectorySeparatorChar);
                 var parts = fileName.Split(Path.DirectorySeparatorChar);
                 var entryFileName = string.Join("/", parts.Skip(1));
                 var isBinaryFile = binaryRegex.IsMatch(entryFileName);
-                if (isBinaryFile)
+                if (isBinaryFile && entry.DataStream != null)
                 {
                     var destinationFile = new FileInfo(Path.Combine(extractDirectory.FullName, parts.Last()));
                     destinationFile.Directory?.Create();
-                    await using var destinationStream = destinationFile.OpenWrite();
-                    await tarStream.CopyEntryContentsAsync(destinationStream, cancellationToken);
-                    destinationFile.SetFileAccessPermissions(entry.TarHeader.Mode);
+                    await entry.ExtractToFileAsync(destinationFile.FullName, overwrite: true, cancellationToken);
                     binaryFiles.Add(destinationFile);
                 }
             }
